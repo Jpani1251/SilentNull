@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector3
@@ -15,40 +15,35 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
 
-class JuegoScreen(
-    val game: SilentNullGame
+class ZonaComunScreen(
+    private val game: SilentNullGame
 ) : Screen {
 
     // =========================
-    // TEXTURAS
+    // MUNDO ZONA COMÚN
     // =========================
-    private val fondoEscom = Texture("fondo_escom.png")
+    private val worldWidth = 2200f
+    private val worldHeight = 1300f
 
     // =========================
-    // MUNDO
-    // =========================
-    private val worldWidth = 3000f
-    private val worldHeight = 3000f
-
-    // =========================
-    // CÁMARA DEL MUNDO
+    // CÁMARAS
     // =========================
     private val camera = OrthographicCamera()
 
-    // =========================
-    // CÁMARA HUD / BOTONES
-    // =========================
     private val hudCamera = OrthographicCamera()
     private val hudViewport = ScreenViewport(hudCamera)
 
     private val touchPosition = Vector3()
 
     // =========================
-    // DEBUG / GUÍA VISUAL
+    // DIBUJO
     // =========================
     private val shapeRenderer = ShapeRenderer()
 
-    private val mostrarEntradaGobierno = true
+    // =========================
+    // TEXTO
+    // =========================
+    private val font = BitmapFont()
 
     // =========================
     // JUGADOR
@@ -56,16 +51,16 @@ class JuegoScreen(
     private val player = Player()
 
     // =========================
-    // ENTRADA EDIFICIO DE GOBIERNO
+    // SALIDA
     // =========================
-    private val entradaGobierno = CollisionBox(
-        worldWidth * 0.62f,
-        worldHeight * 0.40f,
-        worldWidth * 0.08f,
-        worldHeight * 0.22f
+    private val salidaZonaComun = CollisionBox(
+        900f,
+        worldHeight - 230f,
+        400f,
+        230f
     )
 
-    private var moviendoDerecha = false
+    private var moviendoArriba = false
     private var cambiandoPantalla = false
 
     // =========================
@@ -82,6 +77,8 @@ class JuegoScreen(
     // INIT
     // =========================
     init {
+
+        font.data.setScale(2.5f)
 
         btnIzq = GameButton(
             "btn_izq.png",
@@ -115,11 +112,10 @@ class JuegoScreen(
             tamañoBoton
         )
 
-        // Posición inicial del personaje.
-        // Aparece en el pasillo, viendo hacia la zona donde estará Gobierno.
+        // Aparece entrando desde arriba hacia la zona común.
         player.setPosition(
-            worldWidth * 0.45f,
-            worldHeight * 0.45f
+            worldWidth * 0.48f,
+            worldHeight - 360f
         )
 
         resize(
@@ -129,7 +125,7 @@ class JuegoScreen(
     }
 
     // =========================
-    // RENDER PRINCIPAL
+    // RENDER
     // =========================
     override fun render(delta: Float) {
 
@@ -139,21 +135,26 @@ class JuegoScreen(
             return
         }
 
-        ScreenUtils.clear(0f, 0f, 0f, 1f)
+        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
 
-        // =========================
-        // DIBUJAR MUNDO
-        // =========================
+        dibujarZonaComun()
+
         game.batch.projectionMatrix = camera.combined
 
         game.batch.begin()
 
-        game.batch.draw(
-            fondoEscom,
-            0f,
-            0f,
-            worldWidth,
-            worldHeight
+        font.draw(
+            game.batch,
+            "Zona comun",
+            120f,
+            worldHeight - 120f
+        )
+
+        font.draw(
+            game.batch,
+            "Sube para regresar al Edificio de Gobierno",
+            650f,
+            worldHeight - 150f
         )
 
         player.render(game.batch)
@@ -161,66 +162,7 @@ class JuegoScreen(
         game.batch.end()
 
         // =========================
-        // DIBUJAR ENTRADA + FLECHA
-        // =========================
-        if (mostrarEntradaGobierno) {
-
-            shapeRenderer.projectionMatrix = camera.combined
-
-            // =========================
-            // RECTÁNGULO VERDE DE ENTRADA
-            // =========================
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
-
-            shapeRenderer.color = Color.GREEN
-
-            shapeRenderer.rect(
-                entradaGobierno.x,
-                entradaGobierno.y,
-                entradaGobierno.width,
-                entradaGobierno.height
-            )
-
-            shapeRenderer.end()
-
-            // =========================
-            // FLECHA AMARILLA
-            // =========================
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-            shapeRenderer.color = Color.YELLOW
-
-            val arrowCenterX =
-                entradaGobierno.x + entradaGobierno.width / 2f
-
-            val arrowCenterY =
-                entradaGobierno.y + entradaGobierno.height + 180f
-
-            val arrowSize = 90f
-
-            // Punta de la flecha apuntando hacia abajo
-            shapeRenderer.triangle(
-                arrowCenterX,
-                arrowCenterY - arrowSize,
-                arrowCenterX - arrowSize,
-                arrowCenterY + arrowSize,
-                arrowCenterX + arrowSize,
-                arrowCenterY + arrowSize
-            )
-
-            // Cuerpo de la flecha
-            shapeRenderer.rect(
-                arrowCenterX - 25f,
-                arrowCenterY + arrowSize,
-                50f,
-                120f
-            )
-
-            shapeRenderer.end()
-        }
-
-        // =========================
-        // DIBUJAR HUD / BOTONES
+        // HUD
         // =========================
         hudViewport.apply()
 
@@ -237,6 +179,150 @@ class JuegoScreen(
     }
 
     // =========================
+    // DIBUJAR ZONA COMÚN
+    // =========================
+    private fun dibujarZonaComun() {
+
+        shapeRenderer.projectionMatrix = camera.combined
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+
+        // Piso
+        shapeRenderer.color = Color(0.24f, 0.23f, 0.22f, 1f)
+        shapeRenderer.rect(
+            0f,
+            0f,
+            worldWidth,
+            worldHeight
+        )
+
+        // Paredes
+        shapeRenderer.color = Color(0.09f, 0.09f, 0.11f, 1f)
+
+        shapeRenderer.rect(
+            0f,
+            worldHeight - 120f,
+            worldWidth,
+            120f
+        )
+
+        shapeRenderer.rect(
+            0f,
+            0f,
+            worldWidth,
+            120f
+        )
+
+        shapeRenderer.rect(
+            0f,
+            0f,
+            120f,
+            worldHeight
+        )
+
+        shapeRenderer.rect(
+            worldWidth - 120f,
+            0f,
+            120f,
+            worldHeight
+        )
+
+        // Alfombra / área central
+        shapeRenderer.color = Color(0.30f, 0.28f, 0.25f, 1f)
+        shapeRenderer.rect(
+            260f,
+            220f,
+            worldWidth - 520f,
+            worldHeight - 520f
+        )
+
+        // Tres filas de mesas, dos sillas por mesa.
+        dibujarMesaConDosSillas(520f, 820f)
+        dibujarMesaConDosSillas(920f, 820f)
+        dibujarMesaConDosSillas(1320f, 820f)
+
+        dibujarMesaConDosSillas(520f, 570f)
+        dibujarMesaConDosSillas(920f, 570f)
+        dibujarMesaConDosSillas(1320f, 570f)
+
+        dibujarMesaConDosSillas(520f, 320f)
+        dibujarMesaConDosSillas(920f, 320f)
+        dibujarMesaConDosSillas(1320f, 320f)
+
+        // Flecha para salir hacia arriba
+        shapeRenderer.color = Color.YELLOW
+
+        dibujarFlechaArriba(
+            salidaZonaComun.x + salidaZonaComun.width / 2f,
+            salidaZonaComun.y - 120f,
+            80f
+        )
+
+        shapeRenderer.end()
+    }
+
+    // =========================
+    // MESA CON 2 SILLAS
+    // =========================
+    private fun dibujarMesaConDosSillas(
+        x: Float,
+        y: Float
+    ) {
+
+        // Mesa
+        shapeRenderer.color = Color(0.46f, 0.32f, 0.18f, 1f)
+        shapeRenderer.rect(
+            x,
+            y,
+            160f,
+            90f
+        )
+
+        // Silla izquierda
+        shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
+        shapeRenderer.rect(
+            x - 80f,
+            y + 20f,
+            60f,
+            55f
+        )
+
+        // Silla derecha
+        shapeRenderer.rect(
+            x + 180f,
+            y + 20f,
+            60f,
+            55f
+        )
+    }
+
+    // =========================
+    // FLECHA ARRIBA
+    // =========================
+    private fun dibujarFlechaArriba(
+        centerX: Float,
+        centerY: Float,
+        size: Float
+    ) {
+
+        shapeRenderer.triangle(
+            centerX,
+            centerY + size,
+            centerX - size,
+            centerY - size,
+            centerX + size,
+            centerY - size
+        )
+
+        shapeRenderer.rect(
+            centerX - 25f,
+            centerY - size - 120f,
+            50f,
+            120f
+        )
+    }
+
+    // =========================
     // UPDATE
     // =========================
     private fun update(delta: Float) {
@@ -247,7 +333,7 @@ class JuegoScreen(
 
         player.update(delta)
 
-        revisarEntradaGobierno()
+        revisarSalida()
 
         player.limitarPantalla(
             worldWidth,
@@ -258,11 +344,11 @@ class JuegoScreen(
     }
 
     // =========================
-    // INPUT DE BOTONES
+    // INPUT
     // =========================
     private fun procesarInput(delta: Float) {
 
-        moviendoDerecha = false
+        moviendoArriba = false
 
         if (!Gdx.input.isTouched) {
             return
@@ -286,13 +372,12 @@ class JuegoScreen(
 
         if (btnDer.isTouched(touchX, touchY)) {
 
-            moviendoDerecha = true
-
             player.moverDerecha(delta)
         }
 
         if (btnArriba.isTouched(touchX, touchY)) {
 
+            moviendoArriba = true
             player.moverArriba(delta)
         }
 
@@ -303,14 +388,14 @@ class JuegoScreen(
     }
 
     // =========================
-    // ENTRAR A GOBIERNO
+    // SALIR
     // =========================
-    private fun revisarEntradaGobierno() {
+    private fun revisarSalida() {
 
         if (
-            moviendoDerecha
+            moviendoArriba
             &&
-            player.collisionBox.overlaps(entradaGobierno)
+            player.collisionBox.overlaps(salidaZonaComun)
         ) {
 
             cambiandoPantalla = true
@@ -429,11 +514,13 @@ class JuegoScreen(
     override fun hide() {}
 
     // =========================
-    // LIBERAR MEMORIA
+    // DISPOSE
     // =========================
     override fun dispose() {
 
-        fondoEscom.dispose()
+        shapeRenderer.dispose()
+
+        font.dispose()
 
         player.dispose()
 
@@ -441,7 +528,5 @@ class JuegoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
-
-        shapeRenderer.dispose()
     }
 }
