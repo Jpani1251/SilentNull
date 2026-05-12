@@ -22,6 +22,11 @@ class Player {
     private var previousY = 0f
 
     // =========================
+    // DIRECCIÓN DEL PERSONAJE
+    // =========================
+    private var mirandoDerecha = true
+
+    // =========================
     // COLLISION BOX
     // =========================
     val collisionBox = CollisionBox(
@@ -69,11 +74,37 @@ class Player {
     // =========================
     fun render(batch: SpriteBatch) {
 
-        // Se dibuja con su tamaño original.
+        val width = textura.width.toFloat()
+        val height = textura.height.toFloat()
+
+        /*
+            Si tu imagen original mira hacia la derecha,
+            esta configuración está bien.
+
+            Si al probar queda al revés, cambia:
+            val flipX = !mirandoDerecha
+            por:
+            val flipX = mirandoDerecha
+        */
+        val flipX = mirandoDerecha
+
         batch.draw(
             textura,
             x,
-            y
+            y,
+            0f,
+            0f,
+            width,
+            height,
+            1f,
+            1f,
+            0f,
+            0,
+            0,
+            textura.width,
+            textura.height,
+            flipX,
+            false
         )
     }
 
@@ -82,10 +113,14 @@ class Player {
     // =========================
     fun moverIzquierda(delta: Float) {
 
+        mirandoDerecha = false
+
         x -= velocidad * delta
     }
 
     fun moverDerecha(delta: Float) {
+
+        mirandoDerecha = true
 
         x += velocidad * delta
     }

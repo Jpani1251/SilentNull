@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector3
@@ -15,26 +15,22 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
 
-class JuegoScreen(
-    val game: SilentNullGame,
-
-    private val spawnX: Float? = null,
-    private val spawnY: Float? = null
+class BanoScreen(
+    private val game: SilentNullGame,
+    private val nombreBano: String,
+    private val regresoX: Float,
+    private val regresoY: Float,
+    private val pisoRegreso: Int = 1
 ) : Screen {
 
     // =========================
-    // TEXTURAS
+    // MUNDO DEL BANO
     // =========================
-    private val fondoEscom = Texture("fondo_escom.png")
+    private val worldWidth = 1500f
+    private val worldHeight = 1000f
 
     // =========================
-    // MUNDO
-    // =========================
-    private val worldWidth = 3000f
-    private val worldHeight = 3000f
-
-    // =========================
-    // CÁMARAS
+    // CAMARAS
     // =========================
     private val camera = OrthographicCamera()
 
@@ -48,7 +44,10 @@ class JuegoScreen(
     // =========================
     private val shapeRenderer = ShapeRenderer()
 
-    private val mostrarFlechas = true
+    // =========================
+    // TEXTO
+    // =========================
+    private val font = BitmapFont()
 
     // =========================
     // JUGADOR
@@ -56,33 +55,22 @@ class JuegoScreen(
     private val player = Player()
 
     // =========================
-    // ENTRADAS
+    // SALIDA DEL BANO
     // =========================
-
-    // Gobierno: hacia la derecha
-    private val entradaGobierno = CollisionBox(
-        worldWidth * 0.62f,
-        worldHeight * 0.40f,
-        worldWidth * 0.08f,
-        worldHeight * 0.22f
+    private val salidaBano = CollisionBox(
+        520f,
+        worldHeight - 230f,
+        460f,
+        230f
     )
 
-    // Edificio 2: hacia enfrente / arriba
-    private val entradaEdificio2 = CollisionBox(
-        worldWidth * 0.40f,
-        worldHeight * 0.62f,
-        worldWidth * 0.20f,
-        worldHeight * 0.08f
-    )
-
-    private var moviendoDerecha = false
     private var moviendoArriba = false
     private var cambiandoPantalla = false
 
     // =========================
     // BOTONES
     // =========================
-    private val tamañoBoton = 150f
+    private val tamanoBoton = 150f
 
     private lateinit var btnIzq: GameButton
     private lateinit var btnDer: GameButton
@@ -94,41 +82,44 @@ class JuegoScreen(
     // =========================
     init {
 
+        font.data.setScale(2.4f)
+
         btnIzq = GameButton(
             "btn_izq.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            tamanoBoton,
+            tamanoBoton
         )
 
         btnDer = GameButton(
             "btn_der.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            tamanoBoton,
+            tamanoBoton
         )
 
         btnArriba = GameButton(
             "btn_arriba.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            tamanoBoton,
+            tamanoBoton
         )
 
         btnAbajo = GameButton(
             "btn_abajo.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            tamanoBoton,
+            tamanoBoton
         )
 
+        // Aparece dentro del bano, cerca de la salida.
         player.setPosition(
-            spawnX ?: worldWidth * 0.45f,
-            spawnY ?: worldHeight * 0.45f
+            worldWidth / 2f,
+            worldHeight - 390f
         )
 
         resize(
@@ -148,21 +139,26 @@ class JuegoScreen(
             return
         }
 
-        ScreenUtils.clear(0f, 0f, 0f, 1f)
+        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
 
-        // =========================
-        // DIBUJAR MUNDO
-        // =========================
+        dibujarBano()
+
         game.batch.projectionMatrix = camera.combined
 
         game.batch.begin()
 
-        game.batch.draw(
-            fondoEscom,
-            0f,
-            0f,
-            worldWidth,
-            worldHeight
+        font.draw(
+            game.batch,
+            nombreBano,
+            120f,
+            worldHeight - 120f
+        )
+
+        font.draw(
+            game.batch,
+            "Salida",
+            650f,
+            worldHeight - 170f
         )
 
         player.render(game.batch)
@@ -170,34 +166,7 @@ class JuegoScreen(
         game.batch.end()
 
         // =========================
-        // DIBUJAR FLECHAS
-        // =========================
-        if (mostrarFlechas) {
-
-            shapeRenderer.projectionMatrix = camera.combined
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-            shapeRenderer.color = Color.YELLOW
-
-            // Flecha hacia Gobierno
-            dibujarFlechaDerecha(
-                entradaGobierno.x - 100f,
-                entradaGobierno.y + entradaGobierno.height / 2f,
-                45f
-            )
-
-            // Flecha hacia Edificio 2
-            dibujarFlechaArriba(
-                entradaEdificio2.x + entradaEdificio2.width / 2f,
-                entradaEdificio2.y - 90f,
-                45f
-            )
-
-            shapeRenderer.end()
-        }
-
-        // =========================
-        // DIBUJAR HUD
+        // HUD
         // =========================
         hudViewport.apply()
 
@@ -214,110 +183,150 @@ class JuegoScreen(
     }
 
     // =========================
-    // UPDATE
+    // DIBUJAR BANO
     // =========================
-    private fun update(delta: Float) {
+    private fun dibujarBano() {
 
-        player.guardarPosicionAnterior()
+        shapeRenderer.projectionMatrix = camera.combined
 
-        procesarInput(delta)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
-        player.update(delta)
-
-        revisarEntradas()
-
-        player.limitarPantalla(
+        // Piso
+        shapeRenderer.color = Color(0.17f, 0.20f, 0.23f, 1f)
+        shapeRenderer.rect(
+            0f,
+            0f,
             worldWidth,
             worldHeight
         )
 
-        actualizarCamara()
-    }
+        // Paredes
+        shapeRenderer.color = Color(0.08f, 0.08f, 0.10f, 1f)
 
-    // =========================
-    // INPUT
-    // =========================
-    private fun procesarInput(delta: Float) {
-
-        moviendoDerecha = false
-        moviendoArriba = false
-
-        if (!Gdx.input.isTouched) {
-            return
-        }
-
-        touchPosition.set(
-            Gdx.input.x.toFloat(),
-            Gdx.input.y.toFloat(),
-            0f
+        // Pared superior
+        shapeRenderer.rect(
+            0f,
+            worldHeight - 100f,
+            worldWidth,
+            100f
         )
 
-        hudViewport.unproject(touchPosition)
+        // Pared inferior
+        shapeRenderer.rect(
+            0f,
+            0f,
+            worldWidth,
+            100f
+        )
 
-        val touchX = touchPosition.x
-        val touchY = touchPosition.y
+        // Pared izquierda
+        shapeRenderer.rect(
+            0f,
+            0f,
+            100f,
+            worldHeight
+        )
 
-        if (btnIzq.isTouched(touchX, touchY)) {
+        // Pared derecha
+        shapeRenderer.rect(
+            worldWidth - 100f,
+            0f,
+            100f,
+            worldHeight
+        )
 
-            player.moverIzquierda(delta)
-        }
+        // =========================
+        // CABINAS
+        // =========================
+        shapeRenderer.color = Color(0.22f, 0.22f, 0.26f, 1f)
 
-        if (btnDer.isTouched(touchX, touchY)) {
+        shapeRenderer.rect(
+            250f,
+            250f,
+            160f,
+            220f
+        )
 
-            moviendoDerecha = true
-            player.moverDerecha(delta)
-        }
+        shapeRenderer.rect(
+            520f,
+            250f,
+            160f,
+            220f
+        )
 
-        if (btnArriba.isTouched(touchX, touchY)) {
+        shapeRenderer.rect(
+            790f,
+            250f,
+            160f,
+            220f
+        )
 
-            moviendoArriba = true
-            player.moverArriba(delta)
-        }
+        shapeRenderer.rect(
+            1060f,
+            250f,
+            160f,
+            220f
+        )
 
-        if (btnAbajo.isTouched(touchX, touchY)) {
+        // =========================
+        // LAVABOS
+        // =========================
+        shapeRenderer.color = Color(0.70f, 0.70f, 0.75f, 1f)
 
-            player.moverAbajo(delta)
-        }
+        shapeRenderer.rect(
+            270f,
+            150f,
+            120f,
+            70f
+        )
+
+        shapeRenderer.rect(
+            540f,
+            150f,
+            120f,
+            70f
+        )
+
+        shapeRenderer.rect(
+            810f,
+            150f,
+            120f,
+            70f
+        )
+
+        shapeRenderer.rect(
+            1080f,
+            150f,
+            120f,
+            70f
+        )
+
+        // =========================
+        // PUERTA / SALIDA
+        // =========================
+        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+
+        shapeRenderer.rect(
+            salidaBano.x + salidaBano.width / 2f - 70f,
+            worldHeight - 105f,
+            140f,
+            70f
+        )
+
+        // Flecha de salida
+        shapeRenderer.color = Color.YELLOW
+
+        dibujarFlechaArriba(
+            salidaBano.x + salidaBano.width / 2f,
+            salidaBano.y - 70f,
+            45f
+        )
+
+        shapeRenderer.end()
     }
 
     // =========================
-    // ENTRADAS
-    // =========================
-    private fun revisarEntradas() {
-
-        if (
-            moviendoDerecha
-            &&
-            player.collisionBox.overlaps(entradaGobierno)
-        ) {
-
-            cambiandoPantalla = true
-
-            game.screen = GobiernoScreen(game)
-
-            dispose()
-
-            return
-        }
-
-        if (
-            moviendoArriba
-            &&
-            player.collisionBox.overlaps(entradaEdificio2)
-        ) {
-
-            cambiandoPantalla = true
-
-            game.screen = Edificio2Screen(game)
-
-            dispose()
-
-            return
-        }
-    }
-
-    // =========================
-    // FLECHAS
+    // FLECHA ARRIBA
     // =========================
     private fun dibujarFlechaArriba(
         centerX: Float,
@@ -345,34 +354,104 @@ class JuegoScreen(
         )
     }
 
-    private fun dibujarFlechaDerecha(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
+    // =========================
+    // UPDATE
+    // =========================
+    private fun update(delta: Float) {
 
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
+        procesarInput(delta)
 
-        shapeRenderer.triangle(
-            centerX + size,
-            centerY,
-            centerX - size,
-            centerY + size,
-            centerX - size,
-            centerY - size
+        player.update(delta)
+
+        revisarSalida()
+
+        player.limitarPantalla(
+            worldWidth,
+            worldHeight
         )
 
-        shapeRenderer.rect(
-            centerX - size - bodyLength,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
+        actualizarCamara()
     }
 
     // =========================
-    // CÁMARA
+    // INPUT
+    // =========================
+    private fun procesarInput(delta: Float) {
+
+        moviendoArriba = false
+
+        if (!Gdx.input.isTouched) {
+            return
+        }
+
+        touchPosition.set(
+            Gdx.input.x.toFloat(),
+            Gdx.input.y.toFloat(),
+            0f
+        )
+
+        hudViewport.unproject(touchPosition)
+
+        val touchX = touchPosition.x
+        val touchY = touchPosition.y
+
+        if (btnIzq.isTouched(touchX, touchY)) {
+
+            player.moverIzquierda(delta)
+        }
+
+        if (btnDer.isTouched(touchX, touchY)) {
+
+            player.moverDerecha(delta)
+        }
+
+        if (btnArriba.isTouched(touchX, touchY)) {
+
+            moviendoArriba = true
+            player.moverArriba(delta)
+        }
+
+        if (btnAbajo.isTouched(touchX, touchY)) {
+
+            player.moverAbajo(delta)
+        }
+    }
+
+    // =========================
+    // SALIR DEL BANO
+    // =========================
+    private fun revisarSalida() {
+
+        if (
+            moviendoArriba
+            &&
+            player.collisionBox.overlaps(salidaBano)
+        ) {
+
+            cambiandoPantalla = true
+
+            game.screen =
+                if (pisoRegreso == 1) {
+                    Edificio2Screen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                } else {
+                    Edificio2PisoSuperiorScreen(
+                        game,
+                        pisoRegreso,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+            dispose()
+        }
+    }
+
+    // =========================
+    // CAMARA
     // =========================
     private fun actualizarCamara() {
 
@@ -426,7 +505,7 @@ class JuegoScreen(
     }
 
     // =========================
-    // BOTONES
+    // POSICIONAR BOTONES
     // =========================
     private fun posicionarBotones() {
 
@@ -434,20 +513,20 @@ class JuegoScreen(
         val margenY = 50f
 
         btnIzq.x = margenX
-        btnIzq.y = margenY + tamañoBoton
+        btnIzq.y = margenY + tamanoBoton
 
-        btnDer.x = margenX + tamañoBoton * 2f
-        btnDer.y = margenY + tamañoBoton
+        btnDer.x = margenX + tamanoBoton * 2f
+        btnDer.y = margenY + tamanoBoton
 
-        btnArriba.x = margenX + tamañoBoton
-        btnArriba.y = margenY + tamañoBoton * 2f
+        btnArriba.x = margenX + tamanoBoton
+        btnArriba.y = margenY + tamanoBoton * 2f
 
-        btnAbajo.x = margenX + tamañoBoton
+        btnAbajo.x = margenX + tamanoBoton
         btnAbajo.y = margenY
     }
 
     // =========================
-    // MÉTODOS OBLIGATORIOS
+    // METODOS OBLIGATORIOS
     // =========================
     override fun show() {}
 
@@ -480,7 +559,9 @@ class JuegoScreen(
 
     override fun dispose() {
 
-        fondoEscom.dispose()
+        shapeRenderer.dispose()
+
+        font.dispose()
 
         player.dispose()
 
@@ -488,7 +569,5 @@ class JuegoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
-
-        shapeRenderer.dispose()
     }
 }

@@ -26,20 +26,17 @@ class GobiernoScreen(
     private val worldHeight = 1600f
 
     // =========================
-    // CÁMARA DEL MUNDO
+    // CÁMARAS
     // =========================
     private val camera = OrthographicCamera()
 
-    // =========================
-    // CÁMARA HUD / BOTONES
-    // =========================
     private val hudCamera = OrthographicCamera()
     private val hudViewport = ScreenViewport(hudCamera)
 
     private val touchPosition = Vector3()
 
     // =========================
-    // DIBUJO DEL EDIFICIO
+    // DIBUJO
     // =========================
     private val shapeRenderer = ShapeRenderer()
 
@@ -57,7 +54,6 @@ class GobiernoScreen(
     // ZONAS DE CAMBIO
     // =========================
 
-    // Salida al pasillo: lado izquierdo
     private val salidaGobierno = CollisionBox(
         0f,
         worldHeight * 0.38f,
@@ -65,7 +61,6 @@ class GobiernoScreen(
         460f
     )
 
-    // Entrada a Biblioteca: arriba, más a la derecha
     private val entradaBiblioteca = CollisionBox(
         1650f,
         960f,
@@ -73,8 +68,6 @@ class GobiernoScreen(
         130f
     )
 
-    // Entrada a Zona Común:
-    // Ahora cubre toda el área café delimitada.
     private val entradaZonaComun = CollisionBox(
         850f,
         190f,
@@ -82,7 +75,6 @@ class GobiernoScreen(
         330f
     )
 
-    // Entrada al Auditorio: lado derecho
     private val entradaAuditorio = CollisionBox(
         worldWidth - 280f,
         650f,
@@ -145,7 +137,6 @@ class GobiernoScreen(
             tamañoBoton
         )
 
-        // Al entrar desde el pasillo, aparece cerca de la salida izquierda.
         player.setPosition(
             worldWidth * 0.18f,
             worldHeight * 0.45f
@@ -223,7 +214,7 @@ class GobiernoScreen(
         game.batch.end()
 
         // =========================
-        // DIBUJAR HUD / BOTONES
+        // HUD
         // =========================
         hudViewport.apply()
 
@@ -240,7 +231,7 @@ class GobiernoScreen(
     }
 
     // =========================
-    // DISEÑO VISUAL DEL EDIFICIO
+    // DISEÑO
     // =========================
     private fun dibujarEdificioGobierno() {
 
@@ -248,9 +239,7 @@ class GobiernoScreen(
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
-        // =========================
-        // PISO GENERAL
-        // =========================
+        // Piso general
         shapeRenderer.color = Color(0.22f, 0.22f, 0.25f, 1f)
         shapeRenderer.rect(
             0f,
@@ -259,12 +248,9 @@ class GobiernoScreen(
             worldHeight
         )
 
-        // =========================
-        // PAREDES EXTERIORES
-        // =========================
+        // Paredes exteriores
         shapeRenderer.color = Color(0.10f, 0.10f, 0.13f, 1f)
 
-        // Pared superior
         shapeRenderer.rect(
             0f,
             worldHeight - 130f,
@@ -272,7 +258,6 @@ class GobiernoScreen(
             130f
         )
 
-        // Pared inferior
         shapeRenderer.rect(
             0f,
             0f,
@@ -280,7 +265,6 @@ class GobiernoScreen(
             130f
         )
 
-        // Pared izquierda
         shapeRenderer.rect(
             0f,
             0f,
@@ -288,7 +272,6 @@ class GobiernoScreen(
             worldHeight
         )
 
-        // Pared derecha
         shapeRenderer.rect(
             worldWidth - 130f,
             0f,
@@ -296,9 +279,7 @@ class GobiernoScreen(
             worldHeight
         )
 
-        // =========================
-        // PASILLO CENTRAL
-        // =========================
+        // Pasillo central
         shapeRenderer.color = Color(0.30f, 0.30f, 0.34f, 1f)
         shapeRenderer.rect(
             250f,
@@ -307,9 +288,7 @@ class GobiernoScreen(
             360f
         )
 
-        // =========================
-        // RECEPCIÓN
-        // =========================
+        // Recepción
         shapeRenderer.color = Color(0.26f, 0.32f, 0.40f, 1f)
         shapeRenderer.rect(
             330f,
@@ -327,9 +306,7 @@ class GobiernoScreen(
             70f
         )
 
-        // =========================
-        // BIBLIOTECA EXTENDIDA
-        // =========================
+        // Biblioteca extendida
         shapeRenderer.color = Color(0.16f, 0.24f, 0.33f, 1f)
         shapeRenderer.rect(
             900f,
@@ -338,7 +315,7 @@ class GobiernoScreen(
             360f
         )
 
-        // Estantes dentro de Biblioteca
+        // Estantes de Biblioteca
         shapeRenderer.color = Color(0.09f, 0.12f, 0.17f, 1f)
 
         shapeRenderer.rect(980f, 1110f, 80f, 230f)
@@ -352,9 +329,7 @@ class GobiernoScreen(
         shapeRenderer.rect(2100f, 1110f, 80f, 230f)
         shapeRenderer.rect(2240f, 1110f, 80f, 230f)
 
-        // =========================
-        // ZONA COMÚN
-        // =========================
+        // Zona común
         shapeRenderer.color = Color(0.28f, 0.25f, 0.22f, 1f)
         shapeRenderer.rect(
             850f,
@@ -363,14 +338,11 @@ class GobiernoScreen(
             330f
         )
 
-        // Vista previa de mesas
         dibujarMesaConSillas(970f, 300f)
         dibujarMesaConSillas(1210f, 300f)
         dibujarMesaConSillas(1450f, 300f)
 
-        // =========================
-        // ENTRADA VISUAL A AUDITORIO
-        // =========================
+        // Auditorio
         shapeRenderer.color = Color(0.25f, 0.18f, 0.22f, 1f)
         shapeRenderer.rect(
             worldWidth - 530f,
@@ -379,12 +351,9 @@ class GobiernoScreen(
             350f
         )
 
-        // =========================
-        // PUERTAS / ACCESOS VISUALES
-        // =========================
+        // Puertas
         shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
 
-        // Puerta Biblioteca
         shapeRenderer.rect(
             1760f,
             990f,
@@ -392,7 +361,6 @@ class GobiernoScreen(
             50f
         )
 
-        // Entrada visual de Zona Común
         shapeRenderer.rect(
             1150f,
             570f,
@@ -400,7 +368,6 @@ class GobiernoScreen(
             50f
         )
 
-        // Puerta Auditorio
         shapeRenderer.rect(
             worldWidth - 300f,
             780f,
@@ -410,54 +377,46 @@ class GobiernoScreen(
 
         shapeRenderer.end()
 
-        // =========================
-        // FLECHAS DE GUÍA
-        // =========================
+        // Flechas
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
         shapeRenderer.color = Color.YELLOW
 
-        // Flecha salida izquierda
         dibujarFlechaIzquierda(
-            300f,
+            260f,
             salidaGobierno.y + salidaGobierno.height / 2f,
-            80f
+            45f
         )
 
-        // Flecha Biblioteca
         dibujarFlechaArriba(
             entradaBiblioteca.x + entradaBiblioteca.width / 2f,
-            entradaBiblioteca.y - 80f,
-            60f
+            entradaBiblioteca.y - 65f,
+            40f
         )
 
-        // Flecha Zona Común:
-        // Ahora está ubicada justo en la entrada café dibujada.
         dibujarFlechaAbajo(
             1230f,
-            720f,
-            60f
+            690f,
+            40f
         )
 
-        // Flecha Auditorio
         dibujarFlechaDerecha(
-            entradaAuditorio.x - 140f,
+            entradaAuditorio.x - 100f,
             entradaAuditorio.y + entradaAuditorio.height / 2f,
-            80f
+            45f
         )
 
         shapeRenderer.end()
     }
 
     // =========================
-    // MESA CON 2 SILLAS
+    // MESA
     // =========================
     private fun dibujarMesaConSillas(
         x: Float,
         y: Float
     ) {
 
-        // Mesa
         shapeRenderer.color = Color(0.45f, 0.32f, 0.20f, 1f)
         shapeRenderer.rect(
             x,
@@ -466,7 +425,6 @@ class GobiernoScreen(
             80f
         )
 
-        // Silla superior
         shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
         shapeRenderer.rect(
             x + 30f,
@@ -475,7 +433,6 @@ class GobiernoScreen(
             50f
         )
 
-        // Silla inferior
         shapeRenderer.rect(
             x + 30f,
             y - 65f,
@@ -493,6 +450,9 @@ class GobiernoScreen(
         size: Float
     ) {
 
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
+
         shapeRenderer.triangle(
             centerX,
             centerY + size,
@@ -503,10 +463,10 @@ class GobiernoScreen(
         )
 
         shapeRenderer.rect(
-            centerX - 20f,
-            centerY - size - 100f,
-            40f,
-            100f
+            centerX - bodyWidth / 2f,
+            centerY - size - bodyLength,
+            bodyWidth,
+            bodyLength
         )
     }
 
@@ -515,6 +475,9 @@ class GobiernoScreen(
         centerY: Float,
         size: Float
     ) {
+
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
 
         shapeRenderer.triangle(
             centerX,
@@ -526,10 +489,10 @@ class GobiernoScreen(
         )
 
         shapeRenderer.rect(
-            centerX - 20f,
+            centerX - bodyWidth / 2f,
             centerY + size,
-            40f,
-            100f
+            bodyWidth,
+            bodyLength
         )
     }
 
@@ -539,6 +502,9 @@ class GobiernoScreen(
         size: Float
     ) {
 
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
+
         shapeRenderer.triangle(
             centerX + size,
             centerY,
@@ -549,10 +515,10 @@ class GobiernoScreen(
         )
 
         shapeRenderer.rect(
-            centerX - size - 120f,
-            centerY - 25f,
-            120f,
-            50f
+            centerX - size - bodyLength,
+            centerY - bodyWidth / 2f,
+            bodyLength,
+            bodyWidth
         )
     }
 
@@ -562,6 +528,9 @@ class GobiernoScreen(
         size: Float
     ) {
 
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
+
         shapeRenderer.triangle(
             centerX - size,
             centerY,
@@ -573,9 +542,9 @@ class GobiernoScreen(
 
         shapeRenderer.rect(
             centerX + size,
-            centerY - 25f,
-            120f,
-            50f
+            centerY - bodyWidth / 2f,
+            bodyLength,
+            bodyWidth
         )
     }
 
@@ -651,11 +620,10 @@ class GobiernoScreen(
     }
 
     // =========================
-    // CAMBIOS DE ZONA
+    // CAMBIO DE ZONAS
     // =========================
     private fun revisarCambiosDeZona() {
 
-        // Salir al pasillo
         if (
             moviendoIzquierda
             &&
@@ -671,7 +639,6 @@ class GobiernoScreen(
             return
         }
 
-        // Entrar a Biblioteca
         if (
             moviendoArriba
             &&
@@ -687,9 +654,6 @@ class GobiernoScreen(
             return
         }
 
-        // Entrar a Zona Común.
-        // Aquí ya no importa si va hacia abajo o no:
-        // si toca cualquier parte del área café, entra.
         if (player.collisionBox.overlaps(entradaZonaComun)) {
 
             cambiandoPantalla = true
@@ -701,7 +665,6 @@ class GobiernoScreen(
             return
         }
 
-        // Entrar al Auditorio
         if (
             moviendoDerecha
             &&
@@ -719,7 +682,7 @@ class GobiernoScreen(
     }
 
     // =========================
-    // ACTUALIZAR CÁMARA
+    // CÁMARA
     // =========================
     private fun actualizarCamara() {
 
@@ -773,7 +736,7 @@ class GobiernoScreen(
     }
 
     // =========================
-    // POSICIONAR BOTONES
+    // BOTONES
     // =========================
     private fun posicionarBotones() {
 
@@ -825,9 +788,6 @@ class GobiernoScreen(
 
     override fun hide() {}
 
-    // =========================
-    // DISPOSE
-    // =========================
     override fun dispose() {
 
         shapeRenderer.dispose()
