@@ -75,6 +75,16 @@ class Edificio2Screen(
         classroomHeight - 40f
     )
 
+    // =========================
+    // CONEXIÓN A EDIFICIO DE GOBIERNO
+    // =========================
+    private val salidaGobiernoPlantaBaja = CollisionBox(
+        corridorX + corridorWidth - 140f,
+        classroomStartY + classroomHeight / 2f - 120f,
+        360f,
+        240f
+    )
+
     private val entradaBanoHombres = CollisionBox(
         classroomX + 20f,
         bathroomY + bathroomHeight - 20f,
@@ -101,6 +111,7 @@ class Edificio2Screen(
 
     private var moviendoAbajo = false
     private var moviendoIzquierda = false
+    private var moviendoDerecha = false
     private var cambiandoPantalla = false
 
     private var tiempoBloqueoAccesos = 0.35f
@@ -185,13 +196,6 @@ class Edificio2Screen(
 
         font.draw(
             game.batch,
-            "Avanza de frente por el pasillo",
-            corridorX + 40f,
-            560f
-        )
-
-        font.draw(
-            game.batch,
             "Salon 1",
             classroomX + 190f,
             classroomStartY + classroomHeight / 2f + 25f
@@ -234,6 +238,13 @@ class Edificio2Screen(
 
         font.draw(
             game.batch,
+            "Gobierno PB",
+            corridorX + corridorWidth + 35f,
+            classroomStartY + classroomHeight / 2f + 30f
+        )
+
+        font.draw(
+            game.batch,
             "Bano H",
             classroomX + 70f,
             bathroomY + bathroomHeight / 2f + 20f
@@ -270,6 +281,7 @@ class Edificio2Screen(
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
+        // Piso general
         shapeRenderer.color = Color(0.21f, 0.21f, 0.24f, 1f)
         shapeRenderer.rect(
             0f,
@@ -278,6 +290,7 @@ class Edificio2Screen(
             worldHeight
         )
 
+        // Pasillo principal
         shapeRenderer.color = Color(0.32f, 0.32f, 0.36f, 1f)
         shapeRenderer.rect(
             corridorX,
@@ -286,6 +299,16 @@ class Edificio2Screen(
             worldHeight - wallSize * 2f
         )
 
+        // Pasillo hacia Edificio de Gobierno
+        shapeRenderer.color = Color(0.34f, 0.34f, 0.39f, 1f)
+        shapeRenderer.rect(
+            corridorX + corridorWidth,
+            classroomStartY + 45f,
+            worldWidth - (corridorX + corridorWidth) - wallSize,
+            classroomHeight - 90f
+        )
+
+        // Línea central del pasillo principal
         shapeRenderer.color = Color(0.38f, 0.38f, 0.42f, 1f)
         shapeRenderer.rect(
             corridorX + corridorWidth / 2f - 8f,
@@ -294,6 +317,7 @@ class Edificio2Screen(
             worldHeight - wallSize * 2f
         )
 
+        // Paredes
         shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
 
         shapeRenderer.rect(
@@ -331,6 +355,7 @@ class Edificio2Screen(
             worldHeight
         )
 
+        // Salones
         dibujarSalonIzquierdo(
             classroomX,
             classroomStartY,
@@ -380,6 +405,7 @@ class Edificio2Screen(
             bathroomHeight
         )
 
+        // Puerta de salida inferior del edificio 2
         shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
         shapeRenderer.rect(
             salidaEdificio2.x,
@@ -388,6 +414,16 @@ class Edificio2Screen(
             70f
         )
 
+        // Puerta / conexión hacia Gobierno
+        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.rect(
+            corridorX + corridorWidth - 20f,
+            classroomStartY + classroomHeight / 2f - 60f,
+            80f,
+            120f
+        )
+
+        // Flechas
         shapeRenderer.color = Color.YELLOW
 
         dibujarFlechaAbajo(
@@ -405,6 +441,12 @@ class Edificio2Screen(
         dibujarFlechaIzquierda(
             corridorX + 70f,
             stairY + classroomHeight / 2f,
+            45f
+        )
+
+        dibujarFlechaDerecha(
+            corridorX + corridorWidth - 80f,
+            classroomStartY + classroomHeight / 2f,
             45f
         )
 
@@ -736,6 +778,27 @@ class Edificio2Screen(
 
     private fun revisarAccesos() {
 
+        // Ir al Edificio de Gobierno planta baja
+        if (
+            moviendoDerecha
+            &&
+            player.collisionBox.overlaps(salidaGobiernoPlantaBaja)
+        ) {
+
+            cambiandoPantalla = true
+
+            game.screen = EdificioGobiernoScreen(
+                game,
+                300f,
+                700f
+            )
+
+            dispose()
+
+            return
+        }
+
+        // Salir del Edificio 2 hacia el mapa principal
         if (
             moviendoAbajo
             &&
@@ -755,6 +818,7 @@ class Edificio2Screen(
             return
         }
 
+        // Subir al segundo piso
         if (
             moviendoIzquierda
             &&
@@ -763,9 +827,6 @@ class Edificio2Screen(
 
             cambiandoPantalla = true
 
-            // IMPORTANTE:
-            // Desde planta baja SIEMPRE entra al segundo piso real.
-            // No debe mandar a Edificio2PisoSuperiorScreen(game, 2).
             game.screen = Edificio2SegundoPisoScreen(
                 game,
                 corridorX + corridorWidth / 2f,
@@ -777,6 +838,7 @@ class Edificio2Screen(
             return
         }
 
+        // Entrar a salones
         for (salon in entradasSalones) {
 
             if (
@@ -801,6 +863,7 @@ class Edificio2Screen(
             }
         }
 
+        // Entrar a baño hombres
         if (
             moviendoAbajo
             &&
@@ -812,8 +875,8 @@ class Edificio2Screen(
             game.screen = BanoScreen(
                 game,
                 "Bano de Hombres",
-                classroomX + 155f,
-                bathroomY + bathroomHeight + 340f,
+                corridorX + corridorWidth / 2f,
+                bathroomY + bathroomHeight / 2f,
                 1
             )
 
@@ -822,6 +885,7 @@ class Edificio2Screen(
             return
         }
 
+        // Entrar a baño mujeres
         if (
             moviendoAbajo
             &&
@@ -833,8 +897,8 @@ class Edificio2Screen(
             game.screen = BanoScreen(
                 game,
                 "Bano de Mujeres",
-                classroomX + classroomWidth / 2f + 170f,
-                bathroomY + bathroomHeight + 340f,
+                corridorX + corridorWidth / 2f,
+                bathroomY + bathroomHeight / 2f,
                 1
             )
 
@@ -935,6 +999,32 @@ class Edificio2Screen(
         )
     }
 
+    private fun dibujarFlechaDerecha(
+        centerX: Float,
+        centerY: Float,
+        size: Float
+    ) {
+
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
+
+        shapeRenderer.triangle(
+            centerX + size,
+            centerY,
+            centerX - size,
+            centerY + size,
+            centerX - size,
+            centerY - size
+        )
+
+        shapeRenderer.rect(
+            centerX - size - bodyLength,
+            centerY - bodyWidth / 2f,
+            bodyLength,
+            bodyWidth
+        )
+    }
+
     private fun update(delta: Float) {
 
         player.guardarPosicionAnterior()
@@ -969,6 +1059,7 @@ class Edificio2Screen(
 
         moviendoAbajo = false
         moviendoIzquierda = false
+        moviendoDerecha = false
 
         if (!Gdx.input.isTouched) {
             return
@@ -993,6 +1084,7 @@ class Edificio2Screen(
 
         if (btnDer.isTouched(touchX, touchY)) {
 
+            moviendoDerecha = true
             player.moverDerecha(delta)
         }
 
