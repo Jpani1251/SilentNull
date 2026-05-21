@@ -1,9 +1,9 @@
-
 package com.escom.silentnull.screens
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DialogueBox
 import com.escom.silentnull.ui.GameButton
 
 class SalonScreen(
@@ -56,6 +57,11 @@ class SalonScreen(
     private val player = Player()
 
     // =========================
+    // SISTEMA DE DIALOGOS
+    // =========================
+    private lateinit var dialogueBox: DialogueBox
+
+    // =========================
     // SALIDA DEL SALON
     // =========================
     private val salidaSalon = CollisionBox(
@@ -69,9 +75,11 @@ class SalonScreen(
     private var cambiandoPantalla = false
 
     // =========================
-    // BOTONES
+    // BOTONES Y TEXTURAS
     // =========================
     private val tamanoBoton = 150f
+    // Usamos el archivo que confirmamos que existe en assets
+    private val backgroundTexture = Texture("salon_escom.png")
 
     private lateinit var btnIzq: GameButton
     private lateinit var btnDer: GameButton
@@ -84,6 +92,15 @@ class SalonScreen(
     init {
 
         font.data.setScale(2.4f)
+        // Color crema cálido para el texto base
+        font.color = Color(1f, 0.95f, 0.8f, 1f)
+
+        dialogueBox = DialogueBox(
+            font,
+            width = 1400f,
+            height = 300f,
+            screenWidth = worldWidth
+        )
 
         btnIzq = GameButton(
             "btn_izq.png",
@@ -123,6 +140,13 @@ class SalonScreen(
             worldHeight * 0.46f
         )
 
+        // Diálogo de bienvenida al entrar al salón
+        dialogueBox.show(listOf(
+            "Has entrado a $nombreSalon.",
+            "Parece que las clases han terminado por hoy.",
+            "Debo darme prisa."
+        ))
+
         resize(
             Gdx.graphics.width,
             Gdx.graphics.height
@@ -140,14 +164,17 @@ class SalonScreen(
             return
         }
 
-        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
-
-        dibujarSalon()
+        // Color de fondo cálido para los bordes de la pantalla (marrón oscuro)
+        ScreenUtils.clear(0.12f, 0.08f, 0.05f, 1f)
 
         game.batch.projectionMatrix = camera.combined
 
         game.batch.begin()
 
+        // 1. Dibujamos la imagen de fondo primero para que sea la base
+        game.batch.draw(backgroundTexture, 0f, 0f, worldWidth, worldHeight)
+
+        // 2. Dibujamos el nombre del salón en la parte superior
         font.draw(
             game.batch,
             nombreSalon,
@@ -155,19 +182,27 @@ class SalonScreen(
             worldHeight - 120f
         )
 
+        // 3. Dibujamos el texto de salida con un color dorado cálido
+        font.color = Color.GOLD
         font.draw(
             game.batch,
             "Salida",
             worldWidth - 260f,
             worldHeight * 0.38f + 470f
         )
+        // Restauramos el color crema para otros elementos
+        font.color = Color(1f, 0.95f, 0.8f, 1f)
 
+        // 4. Dibujamos al jugador encima del fondo
         player.render(game.batch)
+
+        // 5. Dibujamos el cuadro de diálogo (siempre al final para estar encima)
+        dialogueBox.render(game.batch)
 
         game.batch.end()
 
         // =========================
-        // HUD
+        // HUD (Botones de control)
         // =========================
         hudViewport.apply()
 
@@ -184,177 +219,17 @@ class SalonScreen(
     }
 
     // =========================
-    // DIBUJAR SALON
-    // =========================
-    private fun dibujarSalon() {
-
-        shapeRenderer.projectionMatrix = camera.combined
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-        // Piso
-        shapeRenderer.color = Color(0.18f, 0.22f, 0.27f, 1f)
-        shapeRenderer.rect(
-            0f,
-            0f,
-            worldWidth,
-            worldHeight
-        )
-
-        // Paredes
-        shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
-
-        shapeRenderer.rect(
-            0f,
-            worldHeight - 110f,
-            worldWidth,
-            110f
-        )
-
-        shapeRenderer.rect(
-            0f,
-            0f,
-            worldWidth,
-            110f
-        )
-
-        shapeRenderer.rect(
-            0f,
-            0f,
-            110f,
-            worldHeight
-        )
-
-        shapeRenderer.rect(
-            worldWidth - 110f,
-            0f,
-            110f,
-            worldHeight
-        )
-
-        // Pizarron
-        shapeRenderer.color = Color(0.07f, 0.10f, 0.13f, 1f)
-        shapeRenderer.rect(
-            260f,
-            worldHeight - 250f,
-            720f,
-            70f
-        )
-
-        // Escritorio del profesor
-        shapeRenderer.color = Color(0.46f, 0.32f, 0.18f, 1f)
-        shapeRenderer.rect(
-            1130f,
-            worldHeight - 310f,
-            260f,
-            120f
-        )
-
-        // Bancas 4x4
-        dibujarBancas()
-
-        // Puerta
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
-        shapeRenderer.rect(
-            worldWidth - 130f,
-            worldHeight * 0.45f,
-            80f,
-            150f
-        )
-
-        // Flecha de salida
-        shapeRenderer.color = Color.YELLOW
-
-        dibujarFlechaDerecha(
-            worldWidth - 300f,
-            salidaSalon.y + salidaSalon.height / 2f,
-            45f
-        )
-
-        shapeRenderer.end()
-    }
-
-    // =========================
-    // DIBUJAR BANCAS
-    // =========================
-    private fun dibujarBancas() {
-
-        val startX = 330f
-        val startY = 330f
-
-        val deskWidth = 130f
-        val deskHeight = 80f
-
-        val gapX = 210f
-        val gapY = 150f
-
-        for (fila in 0 until 4) {
-
-            for (columna in 0 until 4) {
-
-                val x = startX + columna * gapX
-                val y = startY + fila * gapY
-
-                // Mesa
-                shapeRenderer.color = Color(0.42f, 0.30f, 0.18f, 1f)
-                shapeRenderer.rect(
-                    x,
-                    y,
-                    deskWidth,
-                    deskHeight
-                )
-
-                // Silla
-                shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
-                shapeRenderer.rect(
-                    x + 35f,
-                    y - 55f,
-                    60f,
-                    45f
-                )
-            }
-        }
-    }
-
-    // =========================
-    // FLECHA DERECHA
-    // =========================
-    private fun dibujarFlechaDerecha(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
-
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
-
-        shapeRenderer.triangle(
-            centerX + size,
-            centerY,
-            centerX - size,
-            centerY + size,
-            centerX - size,
-            centerY - size
-        )
-
-        shapeRenderer.rect(
-            centerX - size - bodyLength,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
-    }
-
-    // =========================
     // UPDATE
     // =========================
     private fun update(delta: Float) {
 
         procesarInput(delta)
 
-        player.update(delta)
-
-        revisarSalida()
+        // Solo actualizamos el juego si no hay diálogos activos
+        if (!dialogueBox.isVisible()) {
+            player.update(delta)
+            revisarSalida()
+        }
 
         player.limitarPantalla(
             worldWidth,
@@ -371,8 +246,16 @@ class SalonScreen(
 
         moviendoDerecha = false
 
-        if (!Gdx.input.isTouched) {
+        if (!Gdx.input.justTouched() && !Gdx.input.isTouched) {
             return
+        }
+
+        // Si hay diálogo, cualquier toque avanza el diálogo
+        if (dialogueBox.isVisible()) {
+            if (Gdx.input.justTouched()) {
+                dialogueBox.advance()
+            }
+            return // Bloqueamos el movimiento mientras hay diálogo
         }
 
         touchPosition.set(
@@ -544,5 +427,7 @@ class SalonScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+        backgroundTexture.dispose()
+        dialogueBox.dispose()
     }
 }

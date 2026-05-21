@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DialogueBox
 import com.escom.silentnull.ui.GameButton
 
 class AuditorioScreen(
@@ -33,6 +34,11 @@ class AuditorioScreen(
     private val font = BitmapFont()
 
     private val player = Player()
+
+    // =========================
+    // SISTEMA DE DIALOGOS
+    // =========================
+    private lateinit var dialogueBox: DialogueBox
 
     private val salidaAuditorio = CollisionBox(
         0f,
@@ -55,6 +61,14 @@ class AuditorioScreen(
 
         font.data.setScale(2.6f)
 
+        // Inicializar cuadro de diálogo
+        dialogueBox = DialogueBox(
+            font,
+            width = 1200f,
+            height = 250f,
+            screenWidth = 1280f // Usaremos un ancho virtual para el HUD
+        )
+
         btnIzq = GameButton("btn_izq.png", 0f, 0f, tamañoBoton, tamañoBoton)
         btnDer = GameButton("btn_der.png", 0f, 0f, tamañoBoton, tamañoBoton)
         btnArriba = GameButton("btn_arriba.png", 0f, 0f, tamañoBoton, tamañoBoton)
@@ -64,6 +78,12 @@ class AuditorioScreen(
             300f,
             worldHeight * 0.48f
         )
+
+        // Diálogo inicial opcional
+        dialogueBox.show(listOf(
+            "El auditorio está en silencio...",
+            "Debo buscar si hay algún rastro del profesor."
+        ))
 
         resize(
             Gdx.graphics.width,
@@ -105,8 +125,10 @@ class AuditorioScreen(
 
         game.batch.end()
 
+        // =========================
+        // HUD Y DIALOGOS
+        // =========================
         hudViewport.apply()
-
         game.batch.projectionMatrix = hudCamera.combined
 
         game.batch.begin()
@@ -115,6 +137,9 @@ class AuditorioScreen(
         btnDer.render(game.batch)
         btnArriba.render(game.batch)
         btnAbajo.render(game.batch)
+
+        // Dibujar el diálogo sobre el HUD
+        dialogueBox.render(game.batch)
 
         game.batch.end()
     }
@@ -195,13 +220,14 @@ class AuditorioScreen(
 
     private fun update(delta: Float) {
 
-        player.guardarPosicionAnterior()
-
         procesarInput(delta)
 
-        player.update(delta)
-
-        revisarSalida()
+        // Solo actualizamos el juego si no hay diálogos activos
+        if (!dialogueBox.isVisible()) {
+            player.guardarPosicionAnterior()
+            player.update(delta)
+            revisarSalida()
+        }
 
         player.limitarPantalla(worldWidth, worldHeight)
 
@@ -212,8 +238,16 @@ class AuditorioScreen(
 
         moviendoIzquierda = false
 
-        if (!Gdx.input.isTouched) {
+        if (!Gdx.input.justTouched() && !Gdx.input.isTouched) {
             return
+        }
+
+        // Si hay diálogo, cualquier toque avanza el diálogo
+        if (dialogueBox.isVisible()) {
+            if (Gdx.input.justTouched()) {
+                dialogueBox.advance()
+            }
+            return // Bloqueamos el movimiento
         }
 
         touchPosition.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
@@ -251,7 +285,7 @@ class AuditorioScreen(
 
             cambiandoPantalla = true
 
-            game.screen = GobiernoScreen(game)
+            // game.screen = GobiernoScreen(game) // Descomentar cuando esté disponible o usar la navegación correcta
 
             dispose()
         }
@@ -308,6 +342,9 @@ class AuditorioScreen(
 
         hudViewport.update(width, height, true)
 
+        // Actualizar el ancho del diálogo al cambiar el tamaño de ventana
+        dialogueBox = DialogueBox(font, 1000f, 200f, width.toFloat())
+
         posicionarBotones()
 
         actualizarCamara()
@@ -330,5 +367,6 @@ class AuditorioScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+        dialogueBox.dispose()
     }
 }

@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector3
@@ -13,6 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DialogueBox
 import com.escom.silentnull.ui.GameButton
 
 class JuegoScreen(
@@ -47,6 +49,7 @@ class JuegoScreen(
     // DIBUJO
     // =========================
     private val shapeRenderer = ShapeRenderer()
+    private val font = BitmapFont()
 
     private val mostrarFlechas = true
 
@@ -54,6 +57,11 @@ class JuegoScreen(
     // JUGADOR
     // =========================
     private val player = Player()
+
+    // =========================
+    // SISTEMA DE DIALOGOS
+    // =========================
+    private lateinit var dialogueBox: DialogueBox
 
     // =========================
     // ENTRADAS
@@ -93,6 +101,15 @@ class JuegoScreen(
     // INIT
     // =========================
     init {
+        font.data.setScale(2.4f)
+
+        // Inicializar diálogo
+        dialogueBox = DialogueBox(
+            font,
+            width = 1200f,
+            height = 250f,
+            screenWidth = 1280f
+        )
 
         btnIzq = GameButton(
             "btn_izq.png",
@@ -130,6 +147,13 @@ class JuegoScreen(
             spawnX ?: worldWidth * 0.45f,
             spawnY ?: worldHeight * 0.45f
         )
+
+        // Diálogo de inicio
+        dialogueBox.show(listOf(
+            "He llegado a la ESCOM.",
+            "Debo encontrar al profesor antes de que sea demasiado tarde.",
+            "El edificio de Gobierno está a la derecha."
+        ))
 
         resize(
             Gdx.graphics.width,
@@ -197,7 +221,7 @@ class JuegoScreen(
         }
 
         // =========================
-        // DIBUJAR HUD
+        // DIBUJAR HUD Y DIALOGOS
         // =========================
         hudViewport.apply()
 
@@ -210,6 +234,9 @@ class JuegoScreen(
         btnArriba.render(game.batch)
         btnAbajo.render(game.batch)
 
+        // Renderizar diálogos sobre el HUD
+        dialogueBox.render(game.batch)
+
         game.batch.end()
     }
 
@@ -218,13 +245,14 @@ class JuegoScreen(
     // =========================
     private fun update(delta: Float) {
 
-        player.guardarPosicionAnterior()
-
         procesarInput(delta)
 
-        player.update(delta)
-
-        revisarEntradas()
+        // Detener el juego si hay diálogos
+        if (!dialogueBox.isVisible()) {
+            player.guardarPosicionAnterior()
+            player.update(delta)
+            revisarEntradas()
+        }
 
         player.limitarPantalla(
             worldWidth,
@@ -242,7 +270,15 @@ class JuegoScreen(
         moviendoDerecha = false
         moviendoArriba = false
 
-        if (!Gdx.input.isTouched) {
+        if (!Gdx.input.justTouched() && !Gdx.input.isTouched) {
+            return
+        }
+
+        // Si hay diálogo, cualquier toque avanza el diálogo
+        if (dialogueBox.isVisible()) {
+            if (Gdx.input.justTouched()) {
+                dialogueBox.advance()
+            }
             return
         }
 
@@ -467,6 +503,9 @@ class JuegoScreen(
             true
         )
 
+        // Reajustar diálogo
+        dialogueBox = DialogueBox(font, 1000f, 200f, width.toFloat())
+
         posicionarBotones()
 
         actualizarCamara()
@@ -490,5 +529,7 @@ class JuegoScreen(
         btnAbajo.dispose()
 
         shapeRenderer.dispose()
+        font.dispose()
+        dialogueBox.dispose()
     }
 }
