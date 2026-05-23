@@ -365,10 +365,10 @@ class EdificioGobiernoScreen(
 
             cambiandoPantalla = true
 
-            game.screen = Edificio2Screen(
+            game.screen = PasilloScreen(
                 game,
-                930f + 850f / 2f,
-                420f + 260f / 2f
+                800f,
+                900f
             )
 
             dispose()

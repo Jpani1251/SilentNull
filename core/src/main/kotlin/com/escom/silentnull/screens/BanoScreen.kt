@@ -430,8 +430,8 @@ class BanoScreen(
             game.screen =
                 when (pisoRegreso) {
 
-                    1 -> {
-                        Edificio2Screen(
+                    1, 3 -> {
+                        PasilloScreen(
                             game,
                             regresoX,
                             regresoY

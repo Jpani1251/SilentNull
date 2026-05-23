@@ -344,7 +344,7 @@ class JuegoScreen(
 
             cambiandoPantalla = true
 
-            game.screen = Edificio2Screen(game)
+            game.screen = PasilloScreen(game)
 
             dispose()
 

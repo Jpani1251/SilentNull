@@ -305,19 +305,10 @@ class SalonScreen(
             cambiandoPantalla = true
 
             game.screen =
-                if (pisoRegreso == 1) {
-                    Edificio2Screen(
-                        game,
-                        regresoX,
-                        regresoY
-                    )
-                } else {
-                    Edificio2PisoSuperiorScreen(
-                        game,
-                        pisoRegreso,
-                        regresoX,
-                        regresoY
-                    )
+                when (pisoRegreso) {
+                    1, 3 -> PasilloScreen(game, regresoX, regresoY)
+                    2 -> Edificio2SegundoPisoScreen(game, regresoX, regresoY)
+                    else -> Edificio2PisoSuperiorScreen(game, pisoRegreso, regresoX, regresoY)
                 }
 
             dispose()

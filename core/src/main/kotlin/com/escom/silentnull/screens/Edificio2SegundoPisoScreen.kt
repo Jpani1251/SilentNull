@@ -770,10 +770,10 @@ class Edificio2SegundoPisoScreen(
 
             cambiandoPantalla = true
 
-            game.screen = Edificio2Screen(
+            game.screen = PasilloScreen(
                 game,
-                corridorX + corridorWidth / 2f,
-                stairDownY + classroomHeight / 2f
+                778f, // Cerca de las coordenadas de las escaleras en el nuevo pasillo
+                1050f
             )
 
             dispose()
