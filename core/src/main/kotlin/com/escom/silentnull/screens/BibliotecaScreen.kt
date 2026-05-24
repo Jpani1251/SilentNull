@@ -43,6 +43,7 @@ class BibliotecaScreen(
 
     private var moviendoAbajo = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     private val tamañoBoton = 150f
 
@@ -72,6 +73,10 @@ class BibliotecaScreen(
     }
 
     override fun render(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         update(delta)
 
@@ -198,20 +203,35 @@ class BibliotecaScreen(
 
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         procesarInput(delta)
 
         player.update(delta)
 
-        revisarSalida()
+        val salioDeBiblioteca = revisarSalida()
 
-        player.limitarPantalla(worldWidth, worldHeight)
+        if (salioDeBiblioteca) {
+            return
+        }
+
+        player.limitarPantalla(
+            worldWidth,
+            worldHeight
+        )
 
         actualizarCamara()
     }
 
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoAbajo = false
 
@@ -219,7 +239,11 @@ class BibliotecaScreen(
             return
         }
 
-        touchPosition.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        touchPosition.set(
+            Gdx.input.x.toFloat(),
+            Gdx.input.y.toFloat(),
+            0f
+        )
 
         hudViewport.unproject(touchPosition)
 
@@ -244,7 +268,7 @@ class BibliotecaScreen(
         }
     }
 
-    private fun revisarSalida() {
+    private fun revisarSalida(): Boolean {
 
         if (
             moviendoAbajo
@@ -256,8 +280,10 @@ class BibliotecaScreen(
 
             game.screen = GobiernoScreen(game)
 
-            dispose()
+            return true
         }
+
+        return false
     }
 
     private fun actualizarCamara() {
@@ -268,19 +294,40 @@ class BibliotecaScreen(
         val halfViewportWidth = camera.viewportWidth / 2f
         val halfViewportHeight = camera.viewportHeight / 2f
 
-        val cameraX = MathUtils.clamp(
-            playerCenterX,
-            halfViewportWidth,
-            worldWidth - halfViewportWidth
+        val minCameraX = halfViewportWidth
+        val maxCameraX = worldWidth - halfViewportWidth
+
+        val minCameraY = halfViewportHeight
+        val maxCameraY = worldHeight - halfViewportHeight
+
+        val cameraX =
+            if (minCameraX > maxCameraX) {
+                worldWidth / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterX,
+                    minCameraX,
+                    maxCameraX
+                )
+            }
+
+        val cameraY =
+            if (minCameraY > maxCameraY) {
+                worldHeight / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterY,
+                    minCameraY,
+                    maxCameraY
+                )
+            }
+
+        camera.position.set(
+            cameraX,
+            cameraY,
+            0f
         )
 
-        val cameraY = MathUtils.clamp(
-            playerCenterY,
-            halfViewportHeight,
-            worldHeight - halfViewportHeight
-        )
-
-        camera.position.set(cameraX, cameraY, 0f)
         camera.update()
     }
 
@@ -306,10 +353,19 @@ class BibliotecaScreen(
 
     override fun resize(width: Int, height: Int) {
 
-        camera.setToOrtho(false, width.toFloat(), height.toFloat())
+        camera.setToOrtho(
+            false,
+            width.toFloat(),
+            height.toFloat()
+        )
+
         camera.update()
 
-        hudViewport.update(width, height, true)
+        hudViewport.update(
+            width,
+            height,
+            true
+        )
 
         posicionarBotones()
 
@@ -320,11 +376,19 @@ class BibliotecaScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     override fun dispose() {
 
+        if (recursosLiberados) {
+            return
+        }
+
         shapeRenderer.dispose()
+
         font.dispose()
 
         player.dispose()
@@ -333,5 +397,7 @@ class BibliotecaScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }

@@ -62,6 +62,7 @@ class ZonaComunScreen(
 
     private var moviendoArriba = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     // =========================
     // BOTONES
@@ -128,6 +129,10 @@ class ZonaComunScreen(
     // RENDER
     // =========================
     override fun render(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         update(delta)
 
@@ -327,13 +332,21 @@ class ZonaComunScreen(
     // =========================
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         procesarInput(delta)
 
         player.update(delta)
 
-        revisarSalida()
+        val salioDeZonaComun = revisarSalida()
+
+        if (salioDeZonaComun) {
+            return
+        }
 
         player.limitarPantalla(
             worldWidth,
@@ -347,6 +360,10 @@ class ZonaComunScreen(
     // INPUT
     // =========================
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoArriba = false
 
@@ -390,7 +407,7 @@ class ZonaComunScreen(
     // =========================
     // SALIR
     // =========================
-    private fun revisarSalida() {
+    private fun revisarSalida(): Boolean {
 
         if (
             moviendoArriba
@@ -402,8 +419,10 @@ class ZonaComunScreen(
 
             game.screen = GobiernoScreen(game)
 
-            dispose()
+            return true
         }
+
+        return false
     }
 
     // =========================
@@ -511,12 +530,19 @@ class ZonaComunScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     // =========================
     // DISPOSE
     // =========================
     override fun dispose() {
+
+        if (recursosLiberados) {
+            return
+        }
 
         shapeRenderer.dispose()
 
@@ -528,5 +554,7 @@ class ZonaComunScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }

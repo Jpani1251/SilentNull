@@ -1,4 +1,3 @@
-
 package com.escom.silentnull.screens
 
 import com.badlogic.gdx.Gdx
@@ -67,6 +66,7 @@ class SalonScreen(
 
     private var moviendoDerecha = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     // =========================
     // BOTONES
@@ -133,6 +133,10 @@ class SalonScreen(
     // RENDER
     // =========================
     override fun render(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         update(delta)
 
@@ -350,11 +354,19 @@ class SalonScreen(
     // =========================
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         procesarInput(delta)
 
         player.update(delta)
 
-        revisarSalida()
+        val salioDelSalon = revisarSalida()
+
+        if (salioDelSalon) {
+            return
+        }
 
         player.limitarPantalla(
             worldWidth,
@@ -368,6 +380,10 @@ class SalonScreen(
     // INPUT
     // =========================
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoDerecha = false
 
@@ -411,7 +427,7 @@ class SalonScreen(
     // =========================
     // SALIR DEL SALON
     // =========================
-    private fun revisarSalida() {
+    private fun revisarSalida(): Boolean {
 
         if (
             moviendoDerecha
@@ -437,8 +453,10 @@ class SalonScreen(
                     )
                 }
 
-            dispose()
+            return true
         }
+
+        return false
     }
 
     // =========================
@@ -458,17 +476,33 @@ class SalonScreen(
         val halfViewportHeight =
             camera.viewportHeight / 2f
 
-        val cameraX = MathUtils.clamp(
-            playerCenterX,
-            halfViewportWidth,
-            worldWidth - halfViewportWidth
-        )
+        val minCameraX = halfViewportWidth
+        val maxCameraX = worldWidth - halfViewportWidth
 
-        val cameraY = MathUtils.clamp(
-            playerCenterY,
-            halfViewportHeight,
-            worldHeight - halfViewportHeight
-        )
+        val minCameraY = halfViewportHeight
+        val maxCameraY = worldHeight - halfViewportHeight
+
+        val cameraX =
+            if (minCameraX > maxCameraX) {
+                worldWidth / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterX,
+                    minCameraX,
+                    maxCameraX
+                )
+            }
+
+        val cameraY =
+            if (minCameraY > maxCameraY) {
+                worldHeight / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterY,
+                    minCameraY,
+                    maxCameraY
+                )
+            }
 
         camera.position.set(
             cameraX,
@@ -530,9 +564,16 @@ class SalonScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     override fun dispose() {
+
+        if (recursosLiberados) {
+            return
+        }
 
         shapeRenderer.dispose()
 
@@ -544,5 +585,7 @@ class SalonScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }

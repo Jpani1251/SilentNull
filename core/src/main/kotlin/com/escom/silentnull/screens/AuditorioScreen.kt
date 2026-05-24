@@ -43,6 +43,7 @@ class AuditorioScreen(
 
     private var moviendoIzquierda = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     private val tamañoBoton = 150f
 
@@ -72,6 +73,10 @@ class AuditorioScreen(
     }
 
     override fun render(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         update(delta)
 
@@ -195,20 +200,35 @@ class AuditorioScreen(
 
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         procesarInput(delta)
 
         player.update(delta)
 
-        revisarSalida()
+        val salioDelAuditorio = revisarSalida()
 
-        player.limitarPantalla(worldWidth, worldHeight)
+        if (salioDelAuditorio) {
+            return
+        }
+
+        player.limitarPantalla(
+            worldWidth,
+            worldHeight
+        )
 
         actualizarCamara()
     }
 
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoIzquierda = false
 
@@ -216,7 +236,11 @@ class AuditorioScreen(
             return
         }
 
-        touchPosition.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        touchPosition.set(
+            Gdx.input.x.toFloat(),
+            Gdx.input.y.toFloat(),
+            0f
+        )
 
         hudViewport.unproject(touchPosition)
 
@@ -241,7 +265,7 @@ class AuditorioScreen(
         }
     }
 
-    private fun revisarSalida() {
+    private fun revisarSalida(): Boolean {
 
         if (
             moviendoIzquierda
@@ -253,8 +277,10 @@ class AuditorioScreen(
 
             game.screen = GobiernoScreen(game)
 
-            dispose()
+            return true
         }
+
+        return false
     }
 
     private fun actualizarCamara() {
@@ -265,19 +291,40 @@ class AuditorioScreen(
         val halfViewportWidth = camera.viewportWidth / 2f
         val halfViewportHeight = camera.viewportHeight / 2f
 
-        val cameraX = MathUtils.clamp(
-            playerCenterX,
-            halfViewportWidth,
-            worldWidth - halfViewportWidth
+        val minCameraX = halfViewportWidth
+        val maxCameraX = worldWidth - halfViewportWidth
+
+        val minCameraY = halfViewportHeight
+        val maxCameraY = worldHeight - halfViewportHeight
+
+        val cameraX =
+            if (minCameraX > maxCameraX) {
+                worldWidth / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterX,
+                    minCameraX,
+                    maxCameraX
+                )
+            }
+
+        val cameraY =
+            if (minCameraY > maxCameraY) {
+                worldHeight / 2f
+            } else {
+                MathUtils.clamp(
+                    playerCenterY,
+                    minCameraY,
+                    maxCameraY
+                )
+            }
+
+        camera.position.set(
+            cameraX,
+            cameraY,
+            0f
         )
 
-        val cameraY = MathUtils.clamp(
-            playerCenterY,
-            halfViewportHeight,
-            worldHeight - halfViewportHeight
-        )
-
-        camera.position.set(cameraX, cameraY, 0f)
         camera.update()
     }
 
@@ -303,10 +350,19 @@ class AuditorioScreen(
 
     override fun resize(width: Int, height: Int) {
 
-        camera.setToOrtho(false, width.toFloat(), height.toFloat())
+        camera.setToOrtho(
+            false,
+            width.toFloat(),
+            height.toFloat()
+        )
+
         camera.update()
 
-        hudViewport.update(width, height, true)
+        hudViewport.update(
+            width,
+            height,
+            true
+        )
 
         posicionarBotones()
 
@@ -317,11 +373,19 @@ class AuditorioScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     override fun dispose() {
 
+        if (recursosLiberados) {
+            return
+        }
+
         shapeRenderer.dispose()
+
         font.dispose()
 
         player.dispose()
@@ -330,5 +394,7 @@ class AuditorioScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }

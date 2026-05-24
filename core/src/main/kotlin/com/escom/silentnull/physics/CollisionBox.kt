@@ -11,20 +11,30 @@ class CollisionBox(
     var height: Float
 ) {
 
+    private val rectangle = Rectangle(
+        x,
+        y,
+        width,
+        height
+    )
+
     fun getRectangle(): Rectangle {
 
-        return Rectangle(
+        rectangle.set(
             x,
             y,
             width,
             height
         )
+
+        return rectangle
     }
 
     fun overlaps(other: CollisionBox): Boolean {
 
-        return getRectangle().overlaps(
-            other.getRectangle()
-        )
+        return x < other.x + other.width &&
+            x + width > other.x &&
+            y < other.y + other.height &&
+            y + height > other.y
     }
 }

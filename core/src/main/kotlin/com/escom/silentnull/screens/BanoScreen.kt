@@ -69,6 +69,7 @@ class BanoScreen(
     // =========================
     private var moviendoArriba = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     // =========================
     // BOTONES
@@ -135,6 +136,10 @@ class BanoScreen(
     // RENDER
     // =========================
     override fun render(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         update(delta)
 
@@ -356,11 +361,19 @@ class BanoScreen(
     // =========================
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         procesarInput(delta)
 
         player.update(delta)
 
-        revisarSalida()
+        val salioDelBano = revisarSalida()
+
+        if (salioDelBano) {
+            return
+        }
 
         player.limitarPantalla(
             worldWidth,
@@ -374,6 +387,10 @@ class BanoScreen(
     // INPUT
     // =========================
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoArriba = false
 
@@ -417,7 +434,7 @@ class BanoScreen(
     // =========================
     // SALIR DEL BAÑO
     // =========================
-    private fun revisarSalida() {
+    private fun revisarSalida(): Boolean {
 
         if (
             moviendoArriba
@@ -456,8 +473,10 @@ class BanoScreen(
                     }
                 }
 
-            dispose()
+            return true
         }
+
+        return false
     }
 
     // =========================
@@ -544,8 +563,7 @@ class BanoScreen(
 
         camera.setToOrtho(
             false,
-            width.toFloat()
-            ,
+            width.toFloat(),
             height.toFloat()
         )
 
@@ -566,9 +584,16 @@ class BanoScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     override fun dispose() {
+
+        if (recursosLiberados) {
+            return
+        }
 
         shapeRenderer.dispose()
 
@@ -580,5 +605,7 @@ class BanoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }
