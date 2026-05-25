@@ -14,6 +14,7 @@ import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
+import kotlin.math.abs
 
 class Edificio2PisoSuperiorScreen(
     private val game: SilentNullGame,
@@ -36,12 +37,9 @@ class Edificio2PisoSuperiorScreen(
     private val classroomHeight = 260f
     private val classroomGap = 115f
 
-    // En tercer piso, aquí estarán las escaleras para bajar al segundo piso.
-    // Es la zona donde normalmente estaría el salón 304.
     private val stairDownY =
         classroomStartY + 3f * (classroomHeight + classroomGap)
 
-    // Aquí sí debe existir el Salón 305.
     private val salon5Y =
         classroomStartY + 4f * (classroomHeight + classroomGap)
 
@@ -94,12 +92,24 @@ class Edificio2PisoSuperiorScreen(
         val regresoY: Float
     )
 
+    private enum class TipoAccesoIzquierdo {
+        SALON,
+        ESCALERAS_BAJAR
+    }
+
+    private data class AccesoIzquierdoDetectado(
+        val tipo: TipoAccesoIzquierdo,
+        val caja: CollisionBox,
+        val salon: SalonAccess? = null
+    )
+
     private val entradasSalones = crearEntradasSalones()
     private val obstaculos = crearObstaculos()
 
     private var moviendoIzquierda = false
     private var moviendoAbajo = false
     private var cambiandoPantalla = false
+    private var recursosLiberados = false
 
     private var tiempoBloqueoAccesos = 0.35f
     private var tiempoBloqueoColisiones = 0.45f
@@ -160,6 +170,10 @@ class Edificio2PisoSuperiorScreen(
 
     override fun render(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         update(delta)
 
         if (cambiandoPantalla) {
@@ -176,7 +190,7 @@ class Edificio2PisoSuperiorScreen(
 
         font.draw(
             game.batch,
-            "Edificio 2 - Tercer piso",
+            "Edificio 2 - Piso $numeroPiso",
             160f,
             worldHeight - 160f
         )
@@ -298,8 +312,6 @@ class Edificio2PisoSuperiorScreen(
             )
         }
 
-        // Escaleras por las que se subió.
-        // Estas mismas sirven para bajar al segundo piso.
         dibujarEscaleras(
             classroomX,
             stairDownY,
@@ -510,36 +522,35 @@ class Edificio2PisoSuperiorScreen(
                         260f,
                         170f
                     ),
-                    corridorX + 100f,
+                    corridorX + corridorWidth / 2f,
                     y + classroomHeight / 2f
                 )
             )
         }
 
         agregarSalon(
-            "Salon 301",
+            "Salon ${numeroPiso}01",
             classroomStartY
         )
 
         agregarSalon(
-            "Salon 302",
+            "Salon ${numeroPiso}02",
             classroomStartY + 1f * (classroomHeight + classroomGap)
         )
 
         agregarSalon(
-            "Salon 303",
+            "Salon ${numeroPiso}03",
             classroomStartY + 2f * (classroomHeight + classroomGap)
         )
 
-        // No agregamos Salon 304 porque ahí están las escaleras.
-        // Salon 305 sí existe y sí debe entrar al salón.
+        // No agregamos Salon ${numeroPiso}04 porque ahí están las escaleras.
         agregarSalon(
-            "Salon 305",
+            "Salon ${numeroPiso}05",
             salon5Y
         )
 
         agregarSalon(
-            "Salon 306",
+            "Salon ${numeroPiso}06",
             salon6Y
         )
 
@@ -609,58 +620,157 @@ class Edificio2PisoSuperiorScreen(
         return lista
     }
 
-    private fun revisarAccesos() {
+    private fun centroXJugador(): Float {
+        return player.collisionBox.x + player.collisionBox.width / 2f
+    }
 
-        // Primero revisamos escaleras.
-        // Esto evita que al ir a las escaleras entre por error al Salón 305.
-        if (
-            moviendoIzquierda
-            &&
-            player.collisionBox.overlaps(entradaEscalerasBajar)
-        ) {
+    private fun centroYJugador(): Float {
+        return player.collisionBox.y + player.collisionBox.height / 2f
+    }
 
-            cambiandoPantalla = true
+    private fun distanciaVertical(acceso: CollisionBox): Float {
 
-            game.screen = Edificio2SegundoPisoScreen(
-                game,
-                corridorX + corridorWidth / 2f,
-                stairDownY + classroomHeight / 2f
-            )
+        val centroAccesoY =
+            acceso.y + acceso.height / 2f
 
-            dispose()
+        return abs(
+            centroYJugador() - centroAccesoY
+        )
+    }
 
-            return
-        }
+    private fun tocaAccesoIzquierdo(acceso: CollisionBox): Boolean {
 
-        // Luego revisamos salones.
+        val margenX = 260f
+        val margenY = 110f
+
+        val jugadorIzquierda =
+            player.collisionBox.x
+
+        val jugadorDerecha =
+            player.collisionBox.x + player.collisionBox.width
+
+        val jugadorCentroY =
+            centroYJugador()
+
+        val tocaHorizontalmente =
+            jugadorIzquierda <= acceso.x + acceso.width + margenX &&
+                jugadorDerecha >= acceso.x - margenX
+
+        val tocaVerticalmente =
+            jugadorCentroY >= acceso.y - margenY &&
+                jugadorCentroY <= acceso.y + acceso.height + margenY
+
+        return tocaHorizontalmente && tocaVerticalmente
+    }
+
+    private fun tocaAccesoAbajo(acceso: CollisionBox): Boolean {
+
+        val margenX = 130f
+        val margenY = 220f
+
+        val jugadorCentroX =
+            centroXJugador()
+
+        val jugadorAbajo =
+            player.collisionBox.y
+
+        val jugadorArriba =
+            player.collisionBox.y + player.collisionBox.height
+
+        val tocaHorizontalmente =
+            jugadorCentroX >= acceso.x - margenX &&
+                jugadorCentroX <= acceso.x + acceso.width + margenX
+
+        val tocaVerticalmente =
+            jugadorAbajo <= acceso.y + acceso.height + margenY &&
+                jugadorArriba >= acceso.y - margenY
+
+        return tocaHorizontalmente && tocaVerticalmente
+    }
+
+    private fun obtenerAccesoIzquierdo(): AccesoIzquierdoDetectado? {
+
+        val candidatos =
+            mutableListOf<AccesoIzquierdoDetectado>()
+
         for (salon in entradasSalones) {
 
-            if (
-                moviendoIzquierda
-                &&
-                player.collisionBox.overlaps(salon.entrada)
-            ) {
+            if (tocaAccesoIzquierdo(salon.entrada)) {
 
-                cambiandoPantalla = true
-
-                game.screen = SalonScreen(
-                    game,
-                    salon.nombre,
-                    salon.regresoX,
-                    salon.regresoY,
-                    3
+                candidatos.add(
+                    AccesoIzquierdoDetectado(
+                        TipoAccesoIzquierdo.SALON,
+                        salon.entrada,
+                        salon
+                    )
                 )
+            }
+        }
 
-                dispose()
+        if (tocaAccesoIzquierdo(entradaEscalerasBajar)) {
 
-                return
+            candidatos.add(
+                AccesoIzquierdoDetectado(
+                    TipoAccesoIzquierdo.ESCALERAS_BAJAR,
+                    entradaEscalerasBajar
+                )
+            )
+        }
+
+        return candidatos.minByOrNull {
+            distanciaVertical(it.caja)
+        }
+    }
+
+    private fun revisarAccesos(): Boolean {
+
+        if (moviendoIzquierda) {
+
+            val accesoIzquierdo =
+                obtenerAccesoIzquierdo()
+
+            if (accesoIzquierdo != null) {
+
+                when (accesoIzquierdo.tipo) {
+
+                    TipoAccesoIzquierdo.SALON -> {
+
+                        val salon =
+                            accesoIzquierdo.salon ?: return false
+
+                        cambiandoPantalla = true
+
+                        game.screen = SalonScreen(
+                            game,
+                            salon.nombre,
+                            salon.regresoX,
+                            salon.regresoY,
+                            numeroPiso
+                        )
+
+                        return true
+                    }
+
+                    TipoAccesoIzquierdo.ESCALERAS_BAJAR -> {
+
+                        cambiandoPantalla = true
+
+                        game.screen = Edificio2SegundoPisoScreen(
+                            game,
+                            corridorX + corridorWidth / 2f,
+                            stairDownY + classroomHeight / 2f
+                        )
+
+                        return true
+                    }
+                }
             }
         }
 
         if (
             moviendoAbajo
             &&
-            player.collisionBox.overlaps(entradaBanoHombres)
+            tocaAccesoAbajo(entradaBanoHombres)
         ) {
 
             cambiandoPantalla = true
@@ -670,18 +780,16 @@ class Edificio2PisoSuperiorScreen(
                 "Bano de Hombres",
                 corridorX + corridorWidth / 2f,
                 bathroomY + bathroomHeight / 2f,
-                3
+                numeroPiso
             )
 
-            dispose()
-
-            return
+            return true
         }
 
         if (
             moviendoAbajo
             &&
-            player.collisionBox.overlaps(entradaBanoMujeres)
+            tocaAccesoAbajo(entradaBanoMujeres)
         ) {
 
             cambiandoPantalla = true
@@ -691,13 +799,13 @@ class Edificio2PisoSuperiorScreen(
                 "Bano de Mujeres",
                 corridorX + corridorWidth / 2f,
                 bathroomY + bathroomHeight / 2f,
-                3
+                numeroPiso
             )
 
-            dispose()
-
-            return
+            return true
         }
+
+        return false
     }
 
     private fun revisarColisiones() {
@@ -767,6 +875,10 @@ class Edificio2PisoSuperiorScreen(
 
     private fun update(delta: Float) {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         procesarInput(delta)
@@ -776,15 +888,19 @@ class Edificio2PisoSuperiorScreen(
         if (tiempoBloqueoAccesos > 0f) {
             tiempoBloqueoAccesos -= delta
         } else {
-            revisarAccesos()
+
+            val cambioPantalla =
+                revisarAccesos()
+
+            if (cambioPantalla) {
+                return
+            }
         }
 
         if (tiempoBloqueoColisiones > 0f) {
             tiempoBloqueoColisiones -= delta
         } else {
-            if (!cambiandoPantalla) {
-                revisarColisiones()
-            }
+            revisarColisiones()
         }
 
         player.limitarPantalla(
@@ -796,6 +912,10 @@ class Edificio2PisoSuperiorScreen(
     }
 
     private fun procesarInput(delta: Float) {
+
+        if (cambiandoPantalla) {
+            return
+        }
 
         moviendoIzquierda = false
         moviendoAbajo = false
@@ -934,9 +1054,16 @@ class Edificio2PisoSuperiorScreen(
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        dispose()
+    }
 
     override fun dispose() {
+
+        if (recursosLiberados) {
+            return
+        }
 
         shapeRenderer.dispose()
 
@@ -948,5 +1075,7 @@ class Edificio2PisoSuperiorScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        recursosLiberados = true
     }
 }
