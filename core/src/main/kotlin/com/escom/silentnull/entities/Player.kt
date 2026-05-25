@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.escom.silentnull.GameState
 import com.escom.silentnull.physics.CollisionBox
 
 class Player {
@@ -33,8 +34,11 @@ class Player {
     var y = 0f
     private var previousX = 0f
     private var previousY = 0f
-    private val escala = 2.0f // Multiplicador de tamaño
+    var escala = 2.0f // Multiplicador de tamaño
     private val velocidad = 450f
+
+    // Inventario persistente global
+    val inventory = GameState.inventory
 
     // Usamos el tamaño del primer cuadro para la colisión
     lateinit var currentFrame: TextureRegion

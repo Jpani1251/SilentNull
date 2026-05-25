@@ -485,7 +485,9 @@ class JuegoScreen(
     // =========================
     // MÉTODOS OBLIGATORIOS
     // =========================
-    override fun show() {}
+    override fun show() {
+        game.playBackgroundMusic()
+    }
 
     override fun resize(width: Int, height: Int) {
 

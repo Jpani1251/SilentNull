@@ -11,7 +11,7 @@ import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
-import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.inventory.InventoryUI
 import com.escom.silentnull.ui.GameButton
 
 class PasilloScreen(
@@ -45,12 +45,6 @@ class PasilloScreen(
         SalonEntry("Salón 4", 600f, 1321f)
     )
 
-    // ESCALERAS: X 755 - 824 Y 1087 (Aumentamos altura para asegurar detección)
-    private val areaEscaleras = CollisionBox(755f, 1080f, 69f, 100f)
-
-    // SALIDA: X 337 - 464 Y 150 (Aumentamos altura para asegurar detección)
-    private val areaSalida = CollisionBox(337f, 100f, 127f, 100f)
-
     private var moviendoArriba = false
     private var moviendoAbajo = false
     private var cambiandoPantalla = false
@@ -60,6 +54,9 @@ class PasilloScreen(
     private lateinit var btnDer: GameButton
     private lateinit var btnArriba: GameButton
     private lateinit var btnAbajo: GameButton
+    private lateinit var btnInventario: GameButton
+
+    private lateinit var inventoryUI: InventoryUI
 
     data class SalonEntry(val nombre: String, val x: Float, val y: Float)
 
@@ -70,6 +67,18 @@ class PasilloScreen(
             // Posición inicial cerca de la salida
             player.setPosition(400f, 200f)
         }
+
+        // Inicializar botones
+        btnIzq = GameButton("btn_izq.png", 0f, 0f, tamanoBoton, tamanoBoton)
+        btnDer = GameButton("btn_der.png", 0f, 0f, tamanoBoton, tamanoBoton)
+        btnArriba = GameButton("btn_arriba.png", 0f, 0f, tamanoBoton, tamanoBoton)
+        btnAbajo = GameButton("btn_abajo.png", 0f, 0f, tamanoBoton, tamanoBoton)
+
+        // El logo sirve como botón de inventario temporalmente
+        btnInventario = GameButton("logo.png", 0f, 0f, tamanoBoton, tamanoBoton)
+
+        inventoryUI = InventoryUI(player, font)
+
         posicionarBotones()
     }
 
@@ -93,6 +102,9 @@ class PasilloScreen(
         btnArriba.render(game.batch)
         btnAbajo.render(game.batch)
 
+        // Dibujar botón de inventario en la esquina superior derecha
+        btnInventario.render(game.batch)
+
         // Dibujar coordenadas para depuración
         font.draw(
             game.batch,
@@ -103,14 +115,23 @@ class PasilloScreen(
             Align.center,
             false
         )
+
+        // Dibujar la interfaz del inventario si está abierta
+        inventoryUI.render(game.batch)
+
         game.batch.end()
     }
 
     private fun update(delta: Float) {
         procesarInput(delta)
-        player.update(delta)
-        player.limitarPantalla(worldWidth, worldHeight)
-        revisarAccesos()
+
+        // Solo mover al jugador si el inventario está cerrado
+        if (!inventoryUI.isOpen()) {
+            player.update(delta)
+            player.limitarPantalla(worldWidth, worldHeight)
+            revisarAccesos()
+        }
+
         actualizarCamara()
     }
 
@@ -118,7 +139,15 @@ class PasilloScreen(
         moviendoArriba = false
         moviendoAbajo = false
 
-        if (Gdx.input.isTouched) {
+        if (Gdx.input.justTouched()) {
+            val touchPos = Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+            hudViewport.unproject(touchPos)
+            if (btnInventario.isTouched(touchPos.x, touchPos.y)) {
+                inventoryUI.toggle()
+            }
+        }
+
+        if (Gdx.input.isTouched && !inventoryUI.isOpen()) {
             val touchPos = Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
             hudViewport.unproject(touchPos)
 
@@ -136,14 +165,23 @@ class PasilloScreen(
     }
 
     private fun revisarAccesos() {
-        val pBox = player.collisionBox
+        val currentX = player.x
+        val currentY = player.y
 
-        // Entrar a salones (Detección por proximidad al centro)
+        // Transición a Pasillo Escom 2: X 824 exacto, margen en Y 935 a 1013
+        if (Math.abs(currentX - 824f) < 1f && currentY >= 935f && currentY <= 1013f) {
+            cambiandoPantalla = true
+            game.screen = Pasillo2Screen(game)
+            dispose()
+            return
+        }
+
+        // Entrar a salones (Detección por proximidad al centro visual)
         for (salon in entradasSalones) {
-            val playerCenterX = player.x + (player.getWidth() / 2f)
+            // Usamos player.x para que coincida con lo que el usuario ve en las coordenadas de depuración
             if (moviendoArriba &&
-                Math.abs(playerCenterX - salon.x) < 55f &&
-                Math.abs(player.y - salon.y) < 70f) {
+                Math.abs(currentX - salon.x) < 40f &&
+                Math.abs(currentY - salon.y) < 50f) {
 
                 cambiandoPantalla = true
                 game.screen = SalonScreen(game, salon.nombre, player.x, player.y - 120f, 3)
@@ -152,17 +190,23 @@ class PasilloScreen(
             }
         }
 
-        // Escaleras: Usamos la caja de colisión completa del jugador para mayor facilidad
-        if (moviendoArriba && pBox.overlaps(areaEscaleras)) {
+        // Escaleras: Coincidencia exacta con las coordenadas X e Y proporcionadas
+        if (moviendoArriba &&
+            currentX >= 762f && currentX <= 824f &&
+            Math.abs(currentY - 1398f) < 15f) {
+
             cambiandoPantalla = true
-            // Spawneamos en el pasillo del segundo piso
+            // Te lleva al segundo piso donde están los salones 201, 202...
             game.screen = Edificio2SegundoPisoScreen(game, 1000f, 1550f)
             dispose()
             return
         }
 
-        // Salida: Usamos la caja de colisión completa del jugador
-        if (moviendoAbajo && pBox.overlaps(areaSalida)) {
+        // Salida: Coincidencia con las coordenadas de la salida
+        if (moviendoAbajo &&
+            currentX >= 337f && currentX <= 464f &&
+            Math.abs(currentY - 150f) < 15f) {
+
             cambiandoPantalla = true
             game.screen = JuegoScreen(game, 1380f, 1740f)
             dispose()
@@ -178,14 +222,30 @@ class PasilloScreen(
     }
 
     private fun posicionarBotones() {
-        val margin = 50f
-        btnIzq = GameButton("btn_izq.png", margin, margin, tamanoBoton, tamanoBoton)
-        btnDer = GameButton("btn_der.png", margin + tamanoBoton + 20f, margin, tamanoBoton, tamanoBoton)
-        btnArriba = GameButton("btn_arriba.png", Gdx.graphics.width - margin - tamanoBoton, margin + tamanoBoton + 20f, tamanoBoton, tamanoBoton)
-        btnAbajo = GameButton("btn_abajo.png", Gdx.graphics.width - margin - tamanoBoton, margin, tamanoBoton, tamanoBoton)
+        val margenX = 50f
+        val margenY = 50f
+
+        btnIzq.x = margenX
+        btnIzq.y = margenY + tamanoBoton
+
+        btnDer.x = margenX + tamanoBoton * 2f
+        btnDer.y = margenY + tamanoBoton
+
+        btnArriba.x = margenX + tamanoBoton
+        btnArriba.y = margenY + tamanoBoton * 2f
+
+        btnAbajo.x = margenX + tamanoBoton
+        btnAbajo.y = margenY
+
+        // Posicionar botón de inventario arriba a la derecha
+        btnInventario.x = Gdx.graphics.width - tamanoBoton - 50f
+        btnInventario.y = Gdx.graphics.height - tamanoBoton - 50f
     }
 
-    override fun show() {}
+    override fun show() {
+        game.playBackgroundMusic()
+    }
+
     override fun resize(width: Int, height: Int) {
         hudViewport.update(width, height, true)
         val aspectRatio = width.toFloat() / height.toFloat()
@@ -200,5 +260,11 @@ class PasilloScreen(
     override fun dispose() {
         pasilloTexture.dispose()
         font.dispose()
+        btnIzq.dispose()
+        btnDer.dispose()
+        btnArriba.dispose()
+        btnAbajo.dispose()
+        btnInventario.dispose()
+        inventoryUI.dispose()
     }
 }

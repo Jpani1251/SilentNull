@@ -8,10 +8,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
+import com.escom.silentnull.inventory.InventoryUI
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
 
@@ -167,6 +169,9 @@ class Edificio2SegundoPisoScreen(
     private lateinit var btnDer: GameButton
     private lateinit var btnArriba: GameButton
     private lateinit var btnAbajo: GameButton
+    private lateinit var btnInventario: GameButton
+
+    private lateinit var inventoryUI: InventoryUI
 
     // =========================
     // INIT
@@ -199,13 +204,11 @@ class Edificio2SegundoPisoScreen(
             tamanoBoton
         )
 
-        btnAbajo = GameButton(
-            "btn_abajo.png",
-            0f,
-            0f,
-            tamanoBoton,
-            tamanoBoton
-        )
+        btnAbajo = GameButton("btn_abajo.png", 0f, 0f, tamanoBoton, tamanoBoton)
+
+        btnInventario = GameButton("logo.png", 0f, 0f, tamanoBoton, tamanoBoton)
+
+        inventoryUI = InventoryUI(player, font)
 
         player.setPosition(
             spawnX ?: corridorX + corridorWidth / 2f,
@@ -305,6 +308,21 @@ class Edificio2SegundoPisoScreen(
         btnDer.render(game.batch)
         btnArriba.render(game.batch)
         btnAbajo.render(game.batch)
+
+        btnInventario.render(game.batch)
+
+        // Coordenadas de depuración
+        font.draw(
+            game.batch,
+            "X: ${player.x.toInt()}  Y: ${player.y.toInt()}",
+            0f,
+            hudViewport.worldHeight - 50f,
+            hudViewport.worldWidth,
+            Align.center,
+            false
+        )
+
+        inventoryUI.render(game.batch)
 
         game.batch.end()
     }
@@ -647,25 +665,25 @@ class Edificio2SegundoPisoScreen(
         }
 
         agregarSalon(
-            "Salon 201",
+            "Laboratorio 201",
             classroomStartY
         )
 
         agregarSalon(
-            "Salon 202",
+            "Laboratorio 202",
             classroomStartY + 1f * (classroomHeight + classroomGap)
         )
 
         agregarSalon(
-            "Salon 203",
+            "Laboratorio 203",
             classroomStartY + 2f * (classroomHeight + classroomGap)
         )
 
-        // No agregamos Salon 204 porque ahí están las escaleras para bajar.
-        // No agregamos Salon 205 porque ahí están las escaleras para subir.
+        // No agregamos Laboratorio 204 porque ahí están las escaleras para bajar.
+        // No agregamos Laboratorio 205 porque ahí están las escaleras para subir.
 
         agregarSalon(
-            "Salon 206",
+            "Laboratorio 206",
             salon6Y
         )
 
@@ -802,7 +820,7 @@ class Edificio2SegundoPisoScreen(
             return
         }
 
-        // Entrar a salones.
+        // Entrar a laboratorios
         for (salon in entradasSalones) {
 
             if (
@@ -813,12 +831,11 @@ class Edificio2SegundoPisoScreen(
 
                 cambiandoPantalla = true
 
-                game.screen = SalonScreen(
+                game.screen = LaboratorioScreen(
                     game,
                     salon.nombre,
                     salon.regresoX,
-                    salon.regresoY,
-                    2
+                    salon.regresoY
                 )
 
                 dispose()
@@ -978,26 +995,28 @@ class Edificio2SegundoPisoScreen(
 
         procesarInput(delta)
 
-        player.update(delta)
+        if (!inventoryUI.isOpen()) {
+            player.update(delta)
 
-        if (tiempoBloqueoAccesos > 0f) {
-            tiempoBloqueoAccesos -= delta
-        } else {
-            revisarAccesos()
-        }
-
-        if (tiempoBloqueoColisiones > 0f) {
-            tiempoBloqueoColisiones -= delta
-        } else {
-            if (!cambiandoPantalla) {
-                revisarColisiones()
+            if (tiempoBloqueoAccesos > 0f) {
+                tiempoBloqueoAccesos -= delta
+            } else {
+                revisarAccesos()
             }
-        }
 
-        player.limitarPantalla(
-            worldWidth,
-            worldHeight
-        )
+            if (tiempoBloqueoColisiones > 0f) {
+                tiempoBloqueoColisiones -= delta
+            } else {
+                if (!cambiandoPantalla) {
+                    revisarColisiones()
+                }
+            }
+
+            player.limitarPantalla(
+                worldWidth,
+                worldHeight
+            )
+        }
 
         actualizarCamara()
     }
@@ -1011,7 +1030,15 @@ class Edificio2SegundoPisoScreen(
         moviendoDerecha = false
         moviendoAbajo = false
 
-        if (!Gdx.input.isTouched) {
+        if (Gdx.input.justTouched()) {
+            touchPosition.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+            hudViewport.unproject(touchPosition)
+            if (btnInventario.isTouched(touchPosition.x, touchPosition.y)) {
+                inventoryUI.toggle()
+            }
+        }
+
+        if (!Gdx.input.isTouched || inventoryUI.isOpen()) {
             return
         }
 
@@ -1123,12 +1150,17 @@ class Edificio2SegundoPisoScreen(
 
         btnAbajo.x = margenX + tamanoBoton
         btnAbajo.y = margenY
+
+        btnInventario.x = Gdx.graphics.width - tamanoBoton - 50f
+        btnInventario.y = Gdx.graphics.height - tamanoBoton - 50f
     }
 
     // =========================
     // MÉTODOS OBLIGATORIOS
     // =========================
-    override fun show() {}
+    override fun show() {
+        game.playBackgroundMusic()
+    }
 
     override fun resize(width: Int, height: Int) {
 
@@ -1169,5 +1201,7 @@ class Edificio2SegundoPisoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+        btnInventario.dispose()
+        inventoryUI.dispose()
     }
 }

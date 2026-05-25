@@ -377,7 +377,9 @@ class SalonScreen(
     // =========================
     // METODOS OBLIGATORIOS
     // =========================
-    override fun show() {}
+    override fun show() {
+        game.stopBackgroundMusic()
+    }
 
     override fun resize(width: Int, height: Int) {
 
