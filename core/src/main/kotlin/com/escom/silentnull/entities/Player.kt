@@ -21,12 +21,21 @@ class Player {
     private var previousX = 0f
     private var previousY = 0f
 
+    // =========================
+    // DIRECCIÓN DEL PERSONAJE
+    // =========================
+    private var mirandoDerecha = true
+
+    // =========================
+    // COLLISION BOX
+    // =========================
     val collisionBox = CollisionBox(
         x,
         y,
         textura.width.toFloat(),
         textura.height.toFloat()
     )
+
     // =========================
     // VELOCIDAD
     // =========================
@@ -37,10 +46,10 @@ class Player {
     // =========================
     init {
 
-        // Posición inicial del jugador
-        x = (Gdx.graphics.width / 2 - textura.width / 2).toFloat()
+        x = (Gdx.graphics.width / 2f) - (textura.width / 2f)
+        y = (Gdx.graphics.height / 2f) - (textura.height / 2f)
 
-        y = (Gdx.graphics.height / 2 - textura.height / 2).toFloat()
+        actualizarCollisionBox()
     }
 
     // =========================
@@ -48,15 +57,16 @@ class Player {
     // =========================
     fun update(delta: Float) {
 
-        // Aquí irá lógica futura:
-        // animaciones
-        // físicas
-        // colisiones
-        // estados
+        actualizarCollisionBox()
+    }
+
+    // =========================
+    // GUARDAR POSICIÓN ANTERIOR
+    // =========================
+    fun guardarPosicionAnterior() {
+
         previousX = x
         previousY = y
-        collisionBox.x = x
-        collisionBox.y = y
     }
 
     // =========================
@@ -64,7 +74,38 @@ class Player {
     // =========================
     fun render(batch: SpriteBatch) {
 
-        batch.draw(textura, x, y)
+        val width = textura.width.toFloat()
+        val height = textura.height.toFloat()
+
+        /*
+            Si tu imagen original mira hacia la derecha,
+            esta configuración está bien.
+
+            Si al probar queda al revés, cambia:
+            val flipX = !mirandoDerecha
+            por:
+            val flipX = mirandoDerecha
+        */
+        val flipX = mirandoDerecha
+
+        batch.draw(
+            textura,
+            x,
+            y,
+            0f,
+            0f,
+            width,
+            height,
+            1f,
+            1f,
+            0f,
+            0,
+            0,
+            textura.width,
+            textura.height,
+            flipX,
+            false
+        )
     }
 
     // =========================
@@ -72,10 +113,14 @@ class Player {
     // =========================
     fun moverIzquierda(delta: Float) {
 
+        mirandoDerecha = false
+
         x -= velocidad * delta
     }
 
     fun moverDerecha(delta: Float) {
+
+        mirandoDerecha = true
 
         x += velocidad * delta
     }
@@ -89,59 +134,78 @@ class Player {
 
         y -= velocidad * delta
     }
+
     fun revertirMovimiento() {
 
         x = previousX
         y = previousY
 
-        collisionBox.x = x
-        collisionBox.y = y
+        actualizarCollisionBox()
     }
 
     // =========================
-    // LIMITES PANTALLA
+    // POSICIONAR JUGADOR
+    // =========================
+    fun setPosition(
+        newX: Float,
+        newY: Float
+    ) {
+
+        x = newX
+        y = newY
+
+        actualizarCollisionBox()
+    }
+
+    // =========================
+    // LÍMITES DEL MAPA
     // =========================
     fun limitarPantalla(
         worldWidth: Float,
         worldHeight: Float
     ) {
 
-        // Límite izquierdo
         if (x < 0f) {
             x = 0f
         }
 
-        // Límite abajo
         if (y < 0f) {
             y = 0f
         }
 
-        // Límite derecho
-        if (x > worldWidth - textura.width) {
-
-            x =
-                worldWidth - textura.width
+        if (x > worldWidth - textura.width.toFloat()) {
+            x = worldWidth - textura.width.toFloat()
         }
 
-        // Límite arriba
-        if (y > worldHeight - textura.height) {
-
-            y =
-                worldHeight - textura.height
+        if (y > worldHeight - textura.height.toFloat()) {
+            y = worldHeight - textura.height.toFloat()
         }
+
+        actualizarCollisionBox()
+    }
+
+    // =========================
+    // ACTUALIZAR COLLISION BOX
+    // =========================
+    private fun actualizarCollisionBox() {
+
+        collisionBox.x = x
+        collisionBox.y = y
+        collisionBox.width = textura.width.toFloat()
+        collisionBox.height = textura.height.toFloat()
     }
 
     // =========================
     // GETTERS
     // =========================
-    fun getWidth(): Int {
+    fun getWidth(): Float {
 
-        return textura.width
+        return textura.width.toFloat()
     }
 
-    fun getHeight(): Int {
+    fun getHeight(): Float {
 
-        return textura.height
+        return textura.height.toFloat()
     }
 
     // =========================
