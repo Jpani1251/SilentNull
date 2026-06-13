@@ -1,5 +1,6 @@
 package com.escom.silentnull.ui
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 
@@ -24,31 +25,27 @@ class GameButton(
     // =========================
     fun render(batch: SpriteBatch) {
 
-        batch.draw(
-            texture,
-            x,
-            y,
-            width,
-            height
-        )
+        batch.draw(texture, x, y, width, height)
     }
 
     // =========================
     // DETECTAR TOQUE
     // =========================
-    fun isTouched(
-        touchX: Float,
-        touchY: Float
-    ): Boolean {
+    fun isTouched(): Boolean {
+
+        if (!Gdx.input.isTouched) {
+            return false
+        }
+
+        val touchX = Gdx.input.x.toFloat()
+
+        val touchY =
+            (Gdx.graphics.height - Gdx.input.y).toFloat()
 
         return (
-            touchX >= x
+            touchX in x..(x + width)
                 &&
-                touchX <= x + width
-                &&
-                touchY >= y
-                &&
-                touchY <= y + height
+                touchY in y..(y + height)
             )
     }
 
@@ -60,3 +57,4 @@ class GameButton(
         texture.dispose()
     }
 }
+
