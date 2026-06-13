@@ -20,7 +20,8 @@ class SalonScreen(
     private val nombreSalon: String,
     private val regresoX: Float,
     private val regresoY: Float,
-    private val pisoRegreso: Int = 1
+    private val pisoRegreso: Int = 1,
+    private val edificioRegreso: Int = 2
 ) : Screen {
 
     // =========================
@@ -58,12 +59,13 @@ class SalonScreen(
     // SALIDA DEL SALON
     // =========================
     private val salidaSalon = CollisionBox(
-        worldWidth - 260f,
+        if (edificioRegreso == 1) 0f else worldWidth - 260f,
         worldHeight * 0.38f,
         260f,
         420f
     )
 
+    private var moviendoIzquierda = false
     private var moviendoDerecha = false
     private var cambiandoPantalla = false
     private var recursosLiberados = false
@@ -117,9 +119,10 @@ class SalonScreen(
             tamanoBoton
         )
 
-        // Aparece cerca de la puerta del salon.
+        // Si viene del Edificio 1, aparece cerca de la puerta izquierda.
+        // Si viene del Edificio 2, aparece cerca de la puerta derecha.
         player.setPosition(
-            worldWidth - 420f,
+            if (edificioRegreso == 1) 320f else worldWidth - 420f,
             worldHeight * 0.46f
         )
 
@@ -162,7 +165,7 @@ class SalonScreen(
         font.draw(
             game.batch,
             "Salida",
-            worldWidth - 260f,
+            if (edificioRegreso == 1) 140f else worldWidth - 260f,
             worldHeight * 0.38f + 470f
         )
 
@@ -254,26 +257,50 @@ class SalonScreen(
             120f
         )
 
-        // Bancas 4x4
+        // Bancas
         dibujarBancas()
 
         // Puerta
         shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
-        shapeRenderer.rect(
-            worldWidth - 130f,
-            worldHeight * 0.45f,
-            80f,
-            150f
-        )
+
+        if (edificioRegreso == 1) {
+
+            shapeRenderer.rect(
+                50f,
+                worldHeight * 0.45f,
+                80f,
+                150f
+            )
+
+        } else {
+
+            shapeRenderer.rect(
+                worldWidth - 130f,
+                worldHeight * 0.45f,
+                80f,
+                150f
+            )
+        }
 
         // Flecha de salida
         shapeRenderer.color = Color.YELLOW
 
-        dibujarFlechaDerecha(
-            worldWidth - 300f,
-            salidaSalon.y + salidaSalon.height / 2f,
-            45f
-        )
+        if (edificioRegreso == 1) {
+
+            dibujarFlechaIzquierda(
+                300f,
+                salidaSalon.y + salidaSalon.height / 2f,
+                45f
+            )
+
+        } else {
+
+            dibujarFlechaDerecha(
+                worldWidth - 300f,
+                salidaSalon.y + salidaSalon.height / 2f,
+                45f
+            )
+        }
 
         shapeRenderer.end()
     }
@@ -350,6 +377,35 @@ class SalonScreen(
     }
 
     // =========================
+    // FLECHA IZQUIERDA
+    // =========================
+    private fun dibujarFlechaIzquierda(
+        centerX: Float,
+        centerY: Float,
+        size: Float
+    ) {
+
+        val bodyWidth = size * 0.45f
+        val bodyLength = size * 1.4f
+
+        shapeRenderer.triangle(
+            centerX - size,
+            centerY,
+            centerX + size,
+            centerY + size,
+            centerX + size,
+            centerY - size
+        )
+
+        shapeRenderer.rect(
+            centerX + size,
+            centerY - bodyWidth / 2f,
+            bodyLength,
+            bodyWidth
+        )
+    }
+
+    // =========================
     // UPDATE
     // =========================
     private fun update(delta: Float) {
@@ -362,7 +418,8 @@ class SalonScreen(
 
         player.update(delta)
 
-        val salioDelSalon = revisarSalida()
+        val salioDelSalon =
+            revisarSalida()
 
         if (salioDelSalon) {
             return
@@ -385,6 +442,7 @@ class SalonScreen(
             return
         }
 
+        moviendoIzquierda = false
         moviendoDerecha = false
 
         if (!Gdx.input.isTouched) {
@@ -404,6 +462,7 @@ class SalonScreen(
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
+            moviendoIzquierda = true
             player.moverIzquierda(delta)
         }
 
@@ -429,47 +488,103 @@ class SalonScreen(
     // =========================
     private fun revisarSalida(): Boolean {
 
+        val estaSaliendo =
+            if (edificioRegreso == 1) {
+                moviendoIzquierda
+            } else {
+                moviendoDerecha
+            }
+
         if (
-            moviendoDerecha
+            estaSaliendo
             &&
             player.collisionBox.overlaps(salidaSalon)
         ) {
 
             cambiandoPantalla = true
 
-            game.screen =
-                when (pisoRegreso) {
-
-                    1 -> {
-                        Edificio2Screen(
-                            game,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-
-                    2 -> {
-                        Edificio2SegundoPisoScreen(
-                            game,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-
-                    else -> {
-                        Edificio2PisoSuperiorScreen(
-                            game,
-                            pisoRegreso,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-                }
+            game.screen = obtenerPantallaRegreso()
 
             return true
         }
 
         return false
+    }
+
+    // =========================
+    // PANTALLA DE REGRESO
+    // =========================
+    private fun obtenerPantallaRegreso(): Screen {
+
+        return if (edificioRegreso == 1) {
+
+            when (pisoRegreso) {
+
+                1 -> {
+                    Edificio1Screen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                2 -> {
+                    Edificio1SegundoPisoScreen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                3 -> {
+                    Edificio1PisoSuperiorScreen(
+                        game,
+                        3,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                else -> {
+                    Edificio1PisoSuperiorScreen(
+                        game,
+                        pisoRegreso,
+                        regresoX,
+                        regresoY
+                    )
+                }
+            }
+
+        } else {
+
+            when (pisoRegreso) {
+
+                1 -> {
+                    Edificio2Screen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                2 -> {
+                    Edificio2SegundoPisoScreen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                else -> {
+                    Edificio2PisoSuperiorScreen(
+                        game,
+                        pisoRegreso,
+                        regresoX,
+                        regresoY
+                    )
+                }
+            }
+        }
     }
 
     // =========================

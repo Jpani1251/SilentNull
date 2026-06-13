@@ -20,7 +20,8 @@ class BanoScreen(
     private val nombreBano: String,
     private val regresoX: Float,
     private val regresoY: Float,
-    private val pisoRegreso: Int = 1
+    private val pisoRegreso: Int = 1,
+    private val edificioRegreso: Int = 2
 ) : Screen {
 
     // =========================
@@ -120,7 +121,7 @@ class BanoScreen(
             tamanoBoton
         )
 
-        // Aparece dentro del baño, cerca de la salida.
+        // Aparece dentro del baño, cerca de la salida superior.
         player.setPosition(
             worldWidth / 2f,
             worldHeight - 390f
@@ -305,7 +306,7 @@ class BanoScreen(
             70f
         )
 
-        // Puerta / salida
+        // Puerta / salida superior
         shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
 
         shapeRenderer.rect(
@@ -369,7 +370,8 @@ class BanoScreen(
 
         player.update(delta)
 
-        val salioDelBano = revisarSalida()
+        val salioDelBano =
+            revisarSalida()
 
         if (salioDelBano) {
             return
@@ -444,39 +446,88 @@ class BanoScreen(
 
             cambiandoPantalla = true
 
-            game.screen =
-                when (pisoRegreso) {
-
-                    1 -> {
-                        Edificio2Screen(
-                            game,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-
-                    2 -> {
-                        Edificio2SegundoPisoScreen(
-                            game,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-
-                    else -> {
-                        Edificio2PisoSuperiorScreen(
-                            game,
-                            pisoRegreso,
-                            regresoX,
-                            regresoY
-                        )
-                    }
-                }
+            game.screen = obtenerPantallaRegreso()
 
             return true
         }
 
         return false
+    }
+
+    // =========================
+    // REGRESAR A PANTALLA CORRECTA
+    // =========================
+    private fun obtenerPantallaRegreso(): Screen {
+
+        return if (edificioRegreso == 1) {
+
+            when (pisoRegreso) {
+
+                1 -> {
+                    Edificio1Screen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                2 -> {
+                    Edificio1SegundoPisoScreen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                3 -> {
+                    Edificio1PisoSuperiorScreen(
+                        game,
+                        3,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                else -> {
+                    Edificio1PisoSuperiorScreen(
+                        game,
+                        pisoRegreso,
+                        regresoX,
+                        regresoY
+                    )
+                }
+            }
+
+        } else {
+
+            when (pisoRegreso) {
+
+                1 -> {
+                    Edificio2Screen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                2 -> {
+                    Edificio2SegundoPisoScreen(
+                        game,
+                        regresoX,
+                        regresoY
+                    )
+                }
+
+                else -> {
+                    Edificio2PisoSuperiorScreen(
+                        game,
+                        pisoRegreso,
+                        regresoX,
+                        regresoY
+                    )
+                }
+            }
+        }
     }
 
     // =========================

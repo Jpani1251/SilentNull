@@ -15,20 +15,21 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
 
-class EdificioGobiernoScreen(
+class SalonGobiernoScreen(
     private val game: SilentNullGame,
-    private val spawnX: Float? = null,
-    private val spawnY: Float? = null
+    private val nombreSalon: String,
+    private val regresoX: Float,
+    private val regresoY: Float
 ) : Screen {
 
     // =========================
     // MUNDO
     // =========================
-    private val worldWidth = 1800f
-    private val worldHeight = 1400f
+    private val worldWidth = 1600f
+    private val worldHeight = 1000f
 
     // =========================
-    // CAMARAS
+    // CÁMARAS
     // =========================
     private val camera = OrthographicCamera()
 
@@ -53,43 +54,21 @@ class EdificioGobiernoScreen(
     private val player = Player()
 
     // =========================
-    // ZONAS IMPORTANTES
+    // SALIDA
     // =========================
-
-    // Salida hacia Edificio 2, lado izquierdo.
-    private val salidaEdificio2 = CollisionBox(
-        0f,
-        worldHeight / 2f - 230f,
-        420f,
-        460f
-    )
-
-    // Salida hacia Edificio 1, lado derecho.
-    private val salidaEdificio1 = CollisionBox(
-        worldWidth - 420f,
-        worldHeight / 2f - 230f,
-        420f,
-        460f
-    )
-
-    // Escaleras hacia segundo piso, parte inferior.
-    private val entradaEscalerasSubir = CollisionBox(
-        worldWidth / 2f - 170f,
-        210f,
-        340f,
-        240f
+    private val salidaSalon = CollisionBox(
+        worldWidth / 2f - 240f,
+        worldHeight - 230f,
+        480f,
+        230f
     )
 
     // =========================
     // ESTADOS
     // =========================
-    private var moviendoIzquierda = false
-    private var moviendoDerecha = false
-    private var moviendoAbajo = false
+    private var moviendoArriba = false
     private var cambiandoPantalla = false
     private var recursosLiberados = false
-
-    private var tiempoBloqueoAccesos = 0.35f
 
     // =========================
     // BOTONES
@@ -106,7 +85,7 @@ class EdificioGobiernoScreen(
     // =========================
     init {
 
-        font.data.setScale(2.2f)
+        font.data.setScale(2.4f)
 
         btnIzq = GameButton(
             "btn_izq.png",
@@ -140,10 +119,10 @@ class EdificioGobiernoScreen(
             tamanoBoton
         )
 
-        // Al venir desde Edificio 2 aparece del lado izquierdo.
+        // Aparece dentro del salón, cerca de la puerta superior.
         player.setPosition(
-            spawnX ?: 430f,
-            spawnY ?: worldHeight / 2f
+            worldWidth / 2f,
+            worldHeight - 360f
         )
 
         resize(
@@ -169,7 +148,7 @@ class EdificioGobiernoScreen(
 
         ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
 
-        dibujarEdificioGobiernoPlantaBaja()
+        dibujarSalonGobierno()
 
         game.batch.projectionMatrix = camera.combined
 
@@ -177,30 +156,16 @@ class EdificioGobiernoScreen(
 
         font.draw(
             game.batch,
-            "Edificio de Gobierno - Planta baja",
+            nombreSalon,
             120f,
             worldHeight - 120f
         )
 
         font.draw(
             game.batch,
-            "Pasillo hacia Edificio 2",
-            120f,
-            worldHeight / 2f + 295f
-        )
-
-        font.draw(
-            game.batch,
-            "Pasillo hacia Edificio 1",
-            worldWidth - 650f,
-            worldHeight / 2f + 295f
-        )
-
-        font.draw(
-            game.batch,
-            "Escaleras a segundo piso",
-            entradaEscalerasSubir.x - 40f,
-            entradaEscalerasSubir.y + entradaEscalerasSubir.height + 90f
+            "Sube para regresar al segundo piso de Gobierno",
+            420f,
+            worldHeight - 170f
         )
 
         player.render(game.batch)
@@ -225,16 +190,16 @@ class EdificioGobiernoScreen(
     }
 
     // =========================
-    // DIBUJAR ESCENARIO
+    // DIBUJAR SALÓN
     // =========================
-    private fun dibujarEdificioGobiernoPlantaBaja() {
+    private fun dibujarSalonGobierno() {
 
         shapeRenderer.projectionMatrix = camera.combined
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
-        // Fondo general
-        shapeRenderer.color = Color(0.23f, 0.23f, 0.27f, 1f)
+        // Piso
+        shapeRenderer.color = Color(0.18f, 0.22f, 0.27f, 1f)
         shapeRenderer.rect(
             0f,
             0f,
@@ -242,222 +207,114 @@ class EdificioGobiernoScreen(
             worldHeight
         )
 
-        // Pasillo principal amplio
-        shapeRenderer.color = Color(0.33f, 0.33f, 0.38f, 1f)
-        shapeRenderer.rect(
-            180f,
-            170f,
-            worldWidth - 360f,
-            worldHeight - 340f
-        )
-
-        // Conexión hacia Edificio 2
-        shapeRenderer.color = Color(0.35f, 0.35f, 0.40f, 1f)
-        shapeRenderer.rect(
-            100f,
-            worldHeight / 2f - 190f,
-            460f,
-            380f
-        )
-
-        // Conexión hacia Edificio 1
-        shapeRenderer.color = Color(0.35f, 0.35f, 0.40f, 1f)
-        shapeRenderer.rect(
-            worldWidth - 560f,
-            worldHeight / 2f - 190f,
-            460f,
-            380f
-        )
-
-        // Línea decorativa central del pasillo
-        shapeRenderer.color = Color(0.40f, 0.40f, 0.45f, 1f)
-        shapeRenderer.rect(
-            worldWidth / 2f - 7f,
-            170f,
-            14f,
-            worldHeight - 340f
-        )
-
-        // Paredes exteriores
+        // Paredes
         shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
 
         shapeRenderer.rect(
             0f,
-            worldHeight - 100f,
+            worldHeight - 110f,
             worldWidth,
-            100f
+            110f
         )
 
         shapeRenderer.rect(
             0f,
             0f,
             worldWidth,
-            100f
+            110f
         )
 
         shapeRenderer.rect(
             0f,
             0f,
-            100f,
+            110f,
             worldHeight
         )
 
         shapeRenderer.rect(
-            worldWidth - 100f,
+            worldWidth - 110f,
             0f,
-            100f,
+            110f,
             worldHeight
         )
 
-        // Puerta hacia Edificio 2
+        // Pizarrón
+        shapeRenderer.color = Color(0.07f, 0.10f, 0.13f, 1f)
+        shapeRenderer.rect(
+            420f,
+            worldHeight - 250f,
+            760f,
+            70f
+        )
+
+        // Escritorio
+        shapeRenderer.color = Color(0.46f, 0.32f, 0.18f, 1f)
+        shapeRenderer.rect(
+            560f,
+            620f,
+            460f,
+            110f
+        )
+
+        // Mesa central
+        shapeRenderer.color = Color(0.42f, 0.30f, 0.18f, 1f)
+        shapeRenderer.rect(
+            610f,
+            380f,
+            360f,
+            100f
+        )
+
+        // Sillas
+        shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
+
+        shapeRenderer.rect(
+            640f,
+            300f,
+            70f,
+            55f
+        )
+
+        shapeRenderer.rect(
+            870f,
+            300f,
+            70f,
+            55f
+        )
+
+        shapeRenderer.rect(
+            640f,
+            505f,
+            70f,
+            55f
+        )
+
+        shapeRenderer.rect(
+            870f,
+            505f,
+            70f,
+            55f
+        )
+
+        // Puerta / salida superior
         shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
         shapeRenderer.rect(
-            100f,
-            worldHeight / 2f - 130f,
-            100f,
-            260f
+            worldWidth / 2f - 80f,
+            worldHeight - 145f,
+            160f,
+            70f
         )
 
-        // Puerta hacia Edificio 1
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
-        shapeRenderer.rect(
-            worldWidth - 200f,
-            worldHeight / 2f - 130f,
-            100f,
-            260f
-        )
-
-        // Escaleras en la parte inferior
-        dibujarEscaleras(
-            entradaEscalerasSubir.x,
-            entradaEscalerasSubir.y,
-            entradaEscalerasSubir.width,
-            entradaEscalerasSubir.height
-        )
-
-        // Flechas
+        // Flecha salida
         shapeRenderer.color = Color.YELLOW
 
-        // Regresar a Edificio 2
-        dibujarFlechaIzquierda(
-            370f,
-            worldHeight / 2f,
-            45f
-        )
-
-        // Ir a Edificio 1
-        dibujarFlechaDerecha(
-            worldWidth - 370f,
-            worldHeight / 2f,
-            45f
-        )
-
-        // Subir por escaleras
-        dibujarFlechaAbajo(
-            entradaEscalerasSubir.x + entradaEscalerasSubir.width / 2f,
-            entradaEscalerasSubir.y + entradaEscalerasSubir.height + 80f,
+        dibujarFlechaArriba(
+            worldWidth / 2f,
+            salidaSalon.y - 90f,
             45f
         )
 
         shapeRenderer.end()
-    }
-
-    // =========================
-    // DIBUJAR ESCALERAS
-    // =========================
-    private fun dibujarEscaleras(
-        x: Float,
-        y: Float,
-        width: Float,
-        height: Float
-    ) {
-
-        shapeRenderer.color = Color(0.24f, 0.24f, 0.29f, 1f)
-        shapeRenderer.rect(
-            x,
-            y,
-            width,
-            height
-        )
-
-        shapeRenderer.color = Color(0.13f, 0.13f, 0.17f, 1f)
-
-        var stepY = y + 28f
-
-        for (i in 0 until 7) {
-
-            shapeRenderer.rect(
-                x + 35f,
-                stepY,
-                width - 70f,
-                18f
-            )
-
-            stepY += 28f
-        }
-    }
-
-    // =========================
-    // REVISAR ACCESOS
-    // =========================
-    private fun revisarAccesos(): Boolean {
-
-        // Regresar al Edificio 2 planta baja.
-        if (
-            moviendoIzquierda
-            &&
-            player.collisionBox.overlaps(salidaEdificio2)
-        ) {
-
-            cambiandoPantalla = true
-
-            game.screen = Edificio2Screen(
-                game,
-                930f + 850f / 2f,
-                420f + 260f / 2f
-            )
-
-            return true
-        }
-
-        // Ir al Edificio 1 planta baja.
-        // Aquí sí debe pasar después de haber caminado dentro de Gobierno.
-        if (
-            moviendoDerecha
-            &&
-            player.collisionBox.overlaps(salidaEdificio1)
-        ) {
-
-            cambiandoPantalla = true
-
-            game.screen = Edificio1Screen(
-                game,
-                420f + 850f / 2f,
-                420f + 260f / 2f
-            )
-
-            return true
-        }
-
-        // Subir al segundo piso del Edificio de Gobierno.
-        if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(entradaEscalerasSubir)
-        ) {
-
-            cambiandoPantalla = true
-
-            game.screen = EdificioGobiernoSegundoPisoScreen(
-                game,
-                900f,
-                700f
-            )
-
-            return true
-        }
-
-        return false
     }
 
     // =========================
@@ -469,22 +326,15 @@ class EdificioGobiernoScreen(
             return
         }
 
-        player.guardarPosicionAnterior()
-
         procesarInput(delta)
 
         player.update(delta)
 
-        if (tiempoBloqueoAccesos > 0f) {
-            tiempoBloqueoAccesos -= delta
-        } else {
+        val salioDelSalon =
+            revisarSalida()
 
-            val cambioPantalla =
-                revisarAccesos()
-
-            if (cambioPantalla) {
-                return
-            }
+        if (salioDelSalon) {
+            return
         }
 
         player.limitarPantalla(
@@ -504,9 +354,7 @@ class EdificioGobiernoScreen(
             return
         }
 
-        moviendoIzquierda = false
-        moviendoDerecha = false
-        moviendoAbajo = false
+        moviendoArriba = false
 
         if (!Gdx.input.isTouched) {
             return
@@ -525,84 +373,55 @@ class EdificioGobiernoScreen(
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
-            moviendoIzquierda = true
             player.moverIzquierda(delta)
         }
 
         if (btnDer.isTouched(touchX, touchY)) {
 
-            moviendoDerecha = true
             player.moverDerecha(delta)
         }
 
         if (btnArriba.isTouched(touchX, touchY)) {
 
+            moviendoArriba = true
             player.moverArriba(delta)
         }
 
         if (btnAbajo.isTouched(touchX, touchY)) {
 
-            moviendoAbajo = true
             player.moverAbajo(delta)
         }
     }
 
     // =========================
-    // FLECHAS
+    // SALIDA
     // =========================
-    private fun dibujarFlechaIzquierda(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
+    private fun revisarSalida(): Boolean {
 
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
+        if (
+            moviendoArriba
+            &&
+            player.collisionBox.overlaps(salidaSalon)
+        ) {
 
-        shapeRenderer.triangle(
-            centerX - size,
-            centerY,
-            centerX + size,
-            centerY + size,
-            centerX + size,
-            centerY - size
-        )
+            cambiandoPantalla = true
 
-        shapeRenderer.rect(
-            centerX + size,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
+            game.screen = EdificioGobiernoSegundoPisoScreen(
+                game,
+                regresoX,
+                regresoY
+            )
+
+            return true
+        }
+
+        return false
     }
 
-    private fun dibujarFlechaDerecha(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
-
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
-
-        shapeRenderer.triangle(
-            centerX + size,
-            centerY,
-            centerX - size,
-            centerY + size,
-            centerX - size,
-            centerY - size
-        )
-
-        shapeRenderer.rect(
-            centerX - size - bodyLength,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
-    }
-
-    private fun dibujarFlechaAbajo(
+    // =========================
+    // FLECHA ARRIBA
+    // =========================
+    private fun dibujarFlechaArriba(
         centerX: Float,
         centerY: Float,
         size: Float
@@ -613,16 +432,16 @@ class EdificioGobiernoScreen(
 
         shapeRenderer.triangle(
             centerX,
-            centerY - size,
-            centerX - size,
             centerY + size,
+            centerX - size,
+            centerY - size,
             centerX + size,
-            centerY + size
+            centerY - size
         )
 
         shapeRenderer.rect(
             centerX - bodyWidth / 2f,
-            centerY + size,
+            centerY - size - bodyLength,
             bodyWidth,
             bodyLength
         )
@@ -745,7 +564,9 @@ class EdificioGobiernoScreen(
         }
 
         shapeRenderer.dispose()
+
         font.dispose()
+
         player.dispose()
 
         btnIzq.dispose()
