@@ -19,6 +19,13 @@ class MenuScreen(val game: SilentNullGame) : Screen {
     private val logoTexture = Texture("logo.png")
 
     // =========================
+    // CONTROL DE CAMBIO DE PANTALLA
+    // =========================
+    private var cambiandoPantalla = false
+
+    private var recursosLiberados = false
+
+    // =========================
     // BOTÓN JUGAR
     // =========================
     private val anchoBtn = 300f
@@ -73,8 +80,20 @@ class MenuScreen(val game: SilentNullGame) : Screen {
     // =========================
     override fun render(delta: Float) {
 
+        // Si ya estamos cambiando de pantalla,
+        // no seguimos actualizando ni dibujando esta pantalla.
+        if (cambiandoPantalla) {
+            return
+        }
+
         // Actualizamos lógica
         update()
+
+        // Si durante update() se cambió la pantalla,
+        // salimos antes de dibujar texturas del menú.
+        if (cambiandoPantalla) {
+            return
+        }
 
         // Limpiamos pantalla
         ScreenUtils.clear(0f, 0f, 0f, 1f)
@@ -133,6 +152,10 @@ class MenuScreen(val game: SilentNullGame) : Screen {
     // =========================
     private fun detectarToqueBoton() {
 
+        if (cambiandoPantalla) {
+            return
+        }
+
         if (Gdx.input.justTouched()) {
 
             val touchX =
@@ -148,11 +171,11 @@ class MenuScreen(val game: SilentNullGame) : Screen {
                 touchY in btnY..(btnY + altoBtn)
             ) {
 
+                // Marcamos que ya estamos cambiando de pantalla
+                cambiandoPantalla = true
+
                 // Cambiamos a pantalla de juego
                 game.screen = JuegoScreen(game)
-
-                // Liberamos memoria del menú
-                dispose()
             }
         }
     }
@@ -168,17 +191,28 @@ class MenuScreen(val game: SilentNullGame) : Screen {
 
     override fun resume() {}
 
-    override fun hide() {}
+    override fun hide() {
+
+        // Cuando esta pantalla deja de mostrarse,
+        // ahora sí liberamos sus recursos.
+        dispose()
+    }
 
     // =========================
     // LIBERAR MEMORIA
     // =========================
     override fun dispose() {
 
+        if (recursosLiberados) {
+            return
+        }
+
         fondo.dispose()
 
         btnJugar.dispose()
 
         logoTexture.dispose()
+
+        recursosLiberados = true
     }
 }
