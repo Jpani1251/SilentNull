@@ -76,11 +76,21 @@ class Edificio2Screen(
     )
 
     // =========================
-    // CONEXIÓN A EDIFICIO DE GOBIERNO
+    // CONEXION A GOBIERNO
     // =========================
     private val salidaGobiernoPlantaBaja = CollisionBox(
         corridorX + corridorWidth - 140f,
         classroomStartY + classroomHeight / 2f - 120f,
+        360f,
+        240f
+    )
+
+    // =========================
+    // CONEXION AL EDIFICIO CENTRAL
+    // =========================
+    private val salidaEdificioCentral = CollisionBox(
+        corridorX + corridorWidth - 140f,
+        bathroomY + bathroomHeight / 2f - 120f,
         360f,
         240f
     )
@@ -112,6 +122,7 @@ class Edificio2Screen(
     private var moviendoAbajo = false
     private var moviendoIzquierda = false
     private var moviendoDerecha = false
+
     private var cambiandoPantalla = false
     private var recursosLiberados = false
 
@@ -120,46 +131,41 @@ class Edificio2Screen(
 
     private val tamanoBoton = 150f
 
-    private lateinit var btnIzq: GameButton
-    private lateinit var btnDer: GameButton
-    private lateinit var btnArriba: GameButton
-    private lateinit var btnAbajo: GameButton
+    private val btnIzq = GameButton(
+        "btn_izq.png",
+        0f,
+        0f,
+        tamanoBoton,
+        tamanoBoton
+    )
+
+    private val btnDer = GameButton(
+        "btn_der.png",
+        0f,
+        0f,
+        tamanoBoton,
+        tamanoBoton
+    )
+
+    private val btnArriba = GameButton(
+        "btn_arriba.png",
+        0f,
+        0f,
+        tamanoBoton,
+        tamanoBoton
+    )
+
+    private val btnAbajo = GameButton(
+        "btn_abajo.png",
+        0f,
+        0f,
+        tamanoBoton,
+        tamanoBoton
+    )
 
     init {
 
         font.data.setScale(2.2f)
-
-        btnIzq = GameButton(
-            "btn_izq.png",
-            0f,
-            0f,
-            tamanoBoton,
-            tamanoBoton
-        )
-
-        btnDer = GameButton(
-            "btn_der.png",
-            0f,
-            0f,
-            tamanoBoton,
-            tamanoBoton
-        )
-
-        btnArriba = GameButton(
-            "btn_arriba.png",
-            0f,
-            0f,
-            tamanoBoton,
-            tamanoBoton
-        )
-
-        btnAbajo = GameButton(
-            "btn_abajo.png",
-            0f,
-            0f,
-            tamanoBoton,
-            tamanoBoton
-        )
 
         player.setPosition(
             spawnX ?: corridorX + corridorWidth / 2f,
@@ -184,7 +190,12 @@ class Edificio2Screen(
             return
         }
 
-        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
+        ScreenUtils.clear(
+            0.04f,
+            0.04f,
+            0.05f,
+            1f
+        )
 
         dibujarEdificio2()
 
@@ -210,14 +221,21 @@ class Edificio2Screen(
             game.batch,
             "Salon 2",
             classroomX + 190f,
-            classroomStartY + 1f * (classroomHeight + classroomGap) + classroomHeight / 2f + 25f
+            classroomStartY +
+                classroomHeight +
+                classroomGap +
+                classroomHeight / 2f +
+                25f
         )
 
         font.draw(
             game.batch,
             "Salon 3",
             classroomX + 190f,
-            classroomStartY + 2f * (classroomHeight + classroomGap) + classroomHeight / 2f + 25f
+            classroomStartY +
+                2f * (classroomHeight + classroomGap) +
+                classroomHeight / 2f +
+                25f
         )
 
         font.draw(
@@ -262,6 +280,13 @@ class Edificio2Screen(
             bathroomY + bathroomHeight / 2f + 20f
         )
 
+        font.draw(
+            game.batch,
+            "Edificio Central",
+            corridorX + corridorWidth + 20f,
+            bathroomY + bathroomHeight / 2f + 30f
+        )
+
         player.render(game.batch)
 
         game.batch.end()
@@ -284,10 +309,18 @@ class Edificio2Screen(
 
         shapeRenderer.projectionMatrix = camera.combined
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
 
-        // Piso general
-        shapeRenderer.color = Color(0.21f, 0.21f, 0.24f, 1f)
+        // Fondo
+        shapeRenderer.color = Color(
+            0.21f,
+            0.21f,
+            0.24f,
+            1f
+        )
+
         shapeRenderer.rect(
             0f,
             0f,
@@ -296,7 +329,13 @@ class Edificio2Screen(
         )
 
         // Pasillo principal
-        shapeRenderer.color = Color(0.32f, 0.32f, 0.36f, 1f)
+        shapeRenderer.color = Color(
+            0.32f,
+            0.32f,
+            0.36f,
+            1f
+        )
+
         shapeRenderer.rect(
             corridorX,
             wallSize,
@@ -304,17 +343,48 @@ class Edificio2Screen(
             worldHeight - wallSize * 2f
         )
 
-        // Pasillo hacia Edificio de Gobierno
-        shapeRenderer.color = Color(0.34f, 0.34f, 0.39f, 1f)
+        // Pasillo hacia Gobierno
+        shapeRenderer.color = Color(
+            0.34f,
+            0.34f,
+            0.39f,
+            1f
+        )
+
         shapeRenderer.rect(
             corridorX + corridorWidth,
             classroomStartY + 45f,
-            worldWidth - (corridorX + corridorWidth) - wallSize,
+            worldWidth -
+                (corridorX + corridorWidth) -
+                wallSize,
             classroomHeight - 90f
         )
 
-        // Línea central del pasillo principal
-        shapeRenderer.color = Color(0.38f, 0.38f, 0.42f, 1f)
+        // Pasillo hacia Edificio Central
+        shapeRenderer.color = Color(
+            0.34f,
+            0.34f,
+            0.39f,
+            1f
+        )
+
+        shapeRenderer.rect(
+            corridorX + corridorWidth,
+            bathroomY + 45f,
+            worldWidth -
+                (corridorX + corridorWidth) -
+                wallSize,
+            bathroomHeight - 90f
+        )
+
+        // Linea central
+        shapeRenderer.color = Color(
+            0.38f,
+            0.38f,
+            0.42f,
+            1f
+        )
+
         shapeRenderer.rect(
             corridorX + corridorWidth / 2f - 8f,
             wallSize,
@@ -323,7 +393,12 @@ class Edificio2Screen(
         )
 
         // Paredes
-        shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
+        shapeRenderer.color = Color(
+            0.08f,
+            0.08f,
+            0.11f,
+            1f
+        )
 
         shapeRenderer.rect(
             0f,
@@ -342,7 +417,8 @@ class Edificio2Screen(
         shapeRenderer.rect(
             salidaEdificio2.x + salidaEdificio2.width,
             0f,
-            worldWidth - (salidaEdificio2.x + salidaEdificio2.width),
+            worldWidth -
+                (salidaEdificio2.x + salidaEdificio2.width),
             wallSize
         )
 
@@ -360,7 +436,6 @@ class Edificio2Screen(
             worldHeight
         )
 
-        // Salones
         dibujarSalonIzquierdo(
             classroomX,
             classroomStartY,
@@ -370,14 +445,17 @@ class Edificio2Screen(
 
         dibujarSalonIzquierdo(
             classroomX,
-            classroomStartY + 1f * (classroomHeight + classroomGap),
+            classroomStartY +
+                classroomHeight +
+                classroomGap,
             classroomWidth,
             classroomHeight
         )
 
         dibujarSalonIzquierdo(
             classroomX,
-            classroomStartY + 2f * (classroomHeight + classroomGap),
+            classroomStartY +
+                2f * (classroomHeight + classroomGap),
             classroomWidth,
             classroomHeight
         )
@@ -410,8 +488,14 @@ class Edificio2Screen(
             bathroomHeight
         )
 
-        // Puerta de salida inferior del edificio 2
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        // Puerta inferior
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
         shapeRenderer.rect(
             salidaEdificio2.x,
             wallSize,
@@ -419,8 +503,7 @@ class Edificio2Screen(
             70f
         )
 
-        // Puerta / conexión hacia Gobierno
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        // Puerta Gobierno
         shapeRenderer.rect(
             corridorX + corridorWidth - 20f,
             classroomStartY + classroomHeight / 2f - 60f,
@@ -428,55 +511,67 @@ class Edificio2Screen(
             120f
         )
 
-        // Flechas
+        // Puerta Edificio Central
+        shapeRenderer.rect(
+            corridorX + corridorWidth - 20f,
+            bathroomY + bathroomHeight / 2f - 60f,
+            80f,
+            120f
+        )
+
         shapeRenderer.color = Color.YELLOW
 
-        // Salida inferior al mapa principal
         dibujarFlechaAbajo(
             salidaEdificio2.x + salidaEdificio2.width / 2f,
             salidaEdificio2.y + salidaEdificio2.height + 100f,
             45f
         )
 
-        // Flecha decorativa de avance en pasillo
         dibujarFlechaArriba(
             corridorX + corridorWidth / 2f,
             720f,
             45f
         )
 
-        // Escaleras
         dibujarFlechaIzquierda(
             corridorX + 70f,
             stairY + classroomHeight / 2f,
             45f
         )
 
-        // Conexión a Gobierno
         dibujarFlechaDerecha(
             corridorX + corridorWidth - 80f,
             classroomStartY + classroomHeight / 2f,
             45f
         )
 
-        // Salones
+        // Flecha hacia Edificio Central
+        dibujarFlechaDerecha(
+            corridorX + corridorWidth - 80f,
+            bathroomY + bathroomHeight / 2f,
+            45f
+        )
+
         for (salon in entradasSalones) {
+
             dibujarFlechaIzquierda(
                 corridorX + 70f,
-                salon.entrada.y + salon.entrada.height / 2f,
+                salon.entrada.y +
+                    salon.entrada.height / 2f,
                 35f
             )
         }
 
-        // Baños
         dibujarFlechaAbajo(
-            entradaBanoHombres.x + entradaBanoHombres.width / 2f,
+            entradaBanoHombres.x +
+                entradaBanoHombres.width / 2f,
             entradaBanoHombres.y + 90f,
             35f
         )
 
         dibujarFlechaAbajo(
-            entradaBanoMujeres.x + entradaBanoMujeres.width / 2f,
+            entradaBanoMujeres.x +
+                entradaBanoMujeres.width / 2f,
             entradaBanoMujeres.y + 90f,
             35f
         )
@@ -491,7 +586,13 @@ class Edificio2Screen(
         height: Float
     ) {
 
-        shapeRenderer.color = Color(0.17f, 0.23f, 0.30f, 1f)
+        shapeRenderer.color = Color(
+            0.17f,
+            0.23f,
+            0.30f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -499,7 +600,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + width - 25f,
             y,
@@ -507,7 +614,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + width - 25f,
             y + height / 2f - 55f,
@@ -515,7 +628,13 @@ class Edificio2Screen(
             110f
         )
 
-        shapeRenderer.color = Color(0.07f, 0.10f, 0.14f, 1f)
+        shapeRenderer.color = Color(
+            0.07f,
+            0.10f,
+            0.14f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + 70f,
             y + height - 90f,
@@ -531,7 +650,13 @@ class Edificio2Screen(
         height: Float
     ) {
 
-        shapeRenderer.color = Color(0.23f, 0.23f, 0.28f, 1f)
+        shapeRenderer.color = Color(
+            0.23f,
+            0.23f,
+            0.28f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -539,7 +664,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + width - 25f,
             y,
@@ -547,7 +678,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + width - 25f,
             y + height / 2f - 60f,
@@ -555,7 +692,12 @@ class Edificio2Screen(
             120f
         )
 
-        shapeRenderer.color = Color(0.13f, 0.13f, 0.17f, 1f)
+        shapeRenderer.color = Color(
+            0.13f,
+            0.13f,
+            0.17f,
+            1f
+        )
 
         var stepY = y + 35f
 
@@ -581,7 +723,13 @@ class Edificio2Screen(
 
         val halfWidth = width / 2f
 
-        shapeRenderer.color = Color(0.18f, 0.25f, 0.30f, 1f)
+        shapeRenderer.color = Color(
+            0.18f,
+            0.25f,
+            0.30f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -589,7 +737,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.25f, 0.20f, 0.28f, 1f)
+        shapeRenderer.color = Color(
+            0.25f,
+            0.20f,
+            0.28f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + halfWidth + 15f,
             y,
@@ -597,7 +751,13 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + halfWidth - 15f,
             y,
@@ -612,7 +772,12 @@ class Edificio2Screen(
             height
         )
 
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
 
         shapeRenderer.rect(
             x + 95f,
@@ -660,12 +825,15 @@ class Edificio2Screen(
 
         agregarSalon(
             "Salon 2",
-            classroomStartY + 1f * (classroomHeight + classroomGap)
+            classroomStartY +
+                classroomHeight +
+                classroomGap
         )
 
         agregarSalon(
             "Salon 3",
-            classroomStartY + 2f * (classroomHeight + classroomGap)
+            classroomStartY +
+                2f * (classroomHeight + classroomGap)
         )
 
         agregarSalon(
@@ -725,7 +893,8 @@ class Edificio2Screen(
             CollisionBox(
                 salidaEdificio2.x + salidaEdificio2.width,
                 0f,
-                worldWidth - (salidaEdificio2.x + salidaEdificio2.width),
+                worldWidth -
+                    (salidaEdificio2.x + salidaEdificio2.width),
                 wallSize
             )
         )
@@ -742,7 +911,9 @@ class Edificio2Screen(
         lista.add(
             CollisionBox(
                 classroomX,
-                classroomStartY + 1f * (classroomHeight + classroomGap),
+                classroomStartY +
+                    classroomHeight +
+                    classroomGap,
                 classroomWidth,
                 classroomHeight
             )
@@ -751,7 +922,8 @@ class Edificio2Screen(
         lista.add(
             CollisionBox(
                 classroomX,
-                classroomStartY + 2f * (classroomHeight + classroomGap),
+                classroomStartY +
+                    2f * (classroomHeight + classroomGap),
                 classroomWidth,
                 classroomHeight
             )
@@ -789,12 +961,31 @@ class Edificio2Screen(
 
     private fun revisarAccesos(): Boolean {
 
-        // Ir al Edificio de Gobierno planta baja.
-        // Importante: aquí NO debe ir a Edificio1Screen.
+        // Edificio Central
         if (
-            moviendoDerecha
-            &&
-            player.collisionBox.overlaps(salidaGobiernoPlantaBaja)
+            moviendoDerecha &&
+            player.collisionBox.overlaps(
+                salidaEdificioCentral
+            )
+        ) {
+
+            cambiandoPantalla = true
+
+            game.screen = EdificioCentralScreen(
+                game,
+                360f,
+                700f
+            )
+
+            return true
+        }
+
+        // Gobierno
+        if (
+            moviendoDerecha &&
+            player.collisionBox.overlaps(
+                salidaGobiernoPlantaBaja
+            )
         ) {
 
             cambiandoPantalla = true
@@ -808,11 +999,12 @@ class Edificio2Screen(
             return true
         }
 
-        // Salir del Edificio 2 hacia el mapa principal.
+        // Mapa principal
         if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(salidaEdificio2)
+            moviendoAbajo &&
+            player.collisionBox.overlaps(
+                salidaEdificio2
+            )
         ) {
 
             cambiandoPantalla = true
@@ -826,11 +1018,12 @@ class Edificio2Screen(
             return true
         }
 
-        // Subir al segundo piso.
+        // Segundo piso
         if (
-            moviendoIzquierda
-            &&
-            player.collisionBox.overlaps(entradaEscaleras)
+            moviendoIzquierda &&
+            player.collisionBox.overlaps(
+                entradaEscaleras
+            )
         ) {
 
             cambiandoPantalla = true
@@ -844,13 +1037,14 @@ class Edificio2Screen(
             return true
         }
 
-        // Entrar a salones.
+        // Salones
         for (salon in entradasSalones) {
 
             if (
-                moviendoIzquierda
-                &&
-                player.collisionBox.overlaps(salon.entrada)
+                moviendoIzquierda &&
+                player.collisionBox.overlaps(
+                    salon.entrada
+                )
             ) {
 
                 cambiandoPantalla = true
@@ -868,11 +1062,12 @@ class Edificio2Screen(
             }
         }
 
-        // Entrar a baño hombres.
+        // Bano hombres
         if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(entradaBanoHombres)
+            moviendoAbajo &&
+            player.collisionBox.overlaps(
+                entradaBanoHombres
+            )
         ) {
 
             cambiandoPantalla = true
@@ -889,11 +1084,12 @@ class Edificio2Screen(
             return true
         }
 
-        // Entrar a baño mujeres.
+        // Bano mujeres
         if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(entradaBanoMujeres)
+            moviendoAbajo &&
+            player.collisionBox.overlaps(
+                entradaBanoMujeres
+            )
         ) {
 
             cambiandoPantalla = true
@@ -917,10 +1113,13 @@ class Edificio2Screen(
 
         for (obstaculo in obstaculos) {
 
-            if (player.collisionBox.overlaps(obstaculo)) {
+            if (
+                player.collisionBox.overlaps(
+                    obstaculo
+                )
+            ) {
 
                 player.revertirMovimiento()
-
                 return
             }
         }
@@ -1043,20 +1242,20 @@ class Edificio2Screen(
         player.update(delta)
 
         if (tiempoBloqueoAccesos > 0f) {
+
             tiempoBloqueoAccesos -= delta
-        } else {
 
-            val cambioPantalla =
-                revisarAccesos()
+        } else if (revisarAccesos()) {
 
-            if (cambioPantalla) {
-                return
-            }
+            return
         }
 
         if (tiempoBloqueoColisiones > 0f) {
+
             tiempoBloqueoColisiones -= delta
+
         } else {
+
             revisarColisiones()
         }
 
@@ -1106,7 +1305,6 @@ class Edificio2Screen(
         }
 
         if (btnArriba.isTouched(touchX, touchY)) {
-
             player.moverArriba(delta)
         }
 
@@ -1119,43 +1317,43 @@ class Edificio2Screen(
 
     private fun actualizarCamara() {
 
-        val playerCenterX =
+        val centerX =
             player.x + player.getWidth() / 2f
 
-        val playerCenterY =
+        val centerY =
             player.y + player.getHeight() / 2f
 
-        val halfViewportWidth =
+        val halfWidth =
             camera.viewportWidth / 2f
 
-        val halfViewportHeight =
+        val halfHeight =
             camera.viewportHeight / 2f
 
-        val minCameraX = halfViewportWidth
-        val maxCameraX = worldWidth - halfViewportWidth
-
-        val minCameraY = halfViewportHeight
-        val maxCameraY = worldHeight - halfViewportHeight
-
         val cameraX =
-            if (minCameraX > maxCameraX) {
+            if (halfWidth > worldWidth - halfWidth) {
+
                 worldWidth / 2f
+
             } else {
+
                 MathUtils.clamp(
-                    playerCenterX,
-                    minCameraX,
-                    maxCameraX
+                    centerX,
+                    halfWidth,
+                    worldWidth - halfWidth
                 )
             }
 
         val cameraY =
-            if (minCameraY > maxCameraY) {
+            if (halfHeight > worldHeight - halfHeight) {
+
                 worldHeight / 2f
+
             } else {
+
                 MathUtils.clamp(
-                    playerCenterY,
-                    minCameraY,
-                    maxCameraY
+                    centerY,
+                    halfHeight,
+                    worldHeight - halfHeight
                 )
             }
 
@@ -1188,15 +1386,16 @@ class Edificio2Screen(
 
     override fun show() {}
 
-    override fun resize(width: Int, height: Int) {
+    override fun resize(
+        width: Int,
+        height: Int
+    ) {
 
         camera.setToOrtho(
             false,
             width.toFloat(),
             height.toFloat()
         )
-
-        camera.update()
 
         hudViewport.update(
             width,
@@ -1205,7 +1404,6 @@ class Edificio2Screen(
         )
 
         posicionarBotones()
-
         actualizarCamara()
     }
 
@@ -1214,7 +1412,6 @@ class Edificio2Screen(
     override fun resume() {}
 
     override fun hide() {
-
         dispose()
     }
 
@@ -1225,9 +1422,7 @@ class Edificio2Screen(
         }
 
         shapeRenderer.dispose()
-
         font.dispose()
-
         player.dispose()
 
         btnIzq.dispose()
