@@ -7,6 +7,7 @@ buildscript {
 }
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 android {
   namespace = "com.escom.silentnull"
@@ -50,7 +51,7 @@ android {
   }
 
   kotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-  
+
 }
 
 repositories {
@@ -64,6 +65,15 @@ dependencies {
   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
   implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
   implementation project(':core')
+  implementation "io.github.jan-tennert.supabase:postgrest-kt:2.5.0"
+
+  implementation "io.ktor:ktor-client-okhttp:2.3.7"
+
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2"
+
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
