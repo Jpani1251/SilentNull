@@ -3,14 +3,43 @@ package com.escom.silentnull.entities
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.Animation
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.escom.silentnull.physics.CollisionBox
 
 class Player {
 
     // =========================
-    // TEXTURA
+    // ENUM DIRECCIÓN
     // =========================
-    private val textura = Texture("alex_protagonista.png")
+    enum class Direction {
+        NORTH, SOUTH, EAST, WEST
+    }
+
+    // =========================
+    // ANIMACIONES
+    // =========================
+    private val textureNorth = Texture("north_anim_alex.png")
+    private val textureSouth = Texture("south_anim_alex.png")
+    private val textureEast = Texture("east_anim_alex.png")
+    private val textureWest = Texture("west_anim_alex.png")
+
+    private val animNorth: Animation<TextureRegion>
+    private val animSouth: Animation<TextureRegion>
+    private val animEast: Animation<TextureRegion>
+    private val animWest: Animation<TextureRegion>
+
+    private var stateTime = 0f
+    private var currentDirection = Direction.SOUTH
+    private var isMoving = false
+
+    private val frameWidth: Int
+    private val frameHeight: Int
+
+    // =========================
+    // ESCALA
+    // =========================
+    private val escala = 2f
 
     // =========================
     // POSICIÓN
@@ -22,19 +51,9 @@ class Player {
     private var previousY = 0f
 
     // =========================
-    // DIRECCIÓN DEL PERSONAJE
-    // =========================
-    private var mirandoDerecha = true
-
-    // =========================
     // COLLISION BOX
     // =========================
-    val collisionBox = CollisionBox(
-        x,
-        y,
-        textura.width.toFloat(),
-        textura.height.toFloat()
-    )
+    val collisionBox: CollisionBox
 
     // =========================
     // VELOCIDAD
@@ -46,10 +65,37 @@ class Player {
     // =========================
     init {
 
-        x = (Gdx.graphics.width / 2f) - (textura.width / 2f)
-        y = (Gdx.graphics.height / 2f) - (textura.height / 2f)
+        // Cada imagen tiene 6 frames en horizontal
+        val framesCount = 6
+
+        frameWidth = textureSouth.width / framesCount
+        frameHeight = textureSouth.height
+
+        animNorth = crearAnimacion(textureNorth, framesCount)
+        animSouth = crearAnimacion(textureSouth, framesCount)
+        animEast = crearAnimacion(textureEast, framesCount)
+        animWest = crearAnimacion(textureWest, framesCount)
+
+        x = (Gdx.graphics.width / 2f) - (frameWidth * escala / 2f)
+        y = (Gdx.graphics.height / 2f) - (frameHeight * escala / 2f)
+
+        collisionBox = CollisionBox(
+            x + (frameWidth * escala) / 2f - 30f,
+            y + 60f, // Subimos considerablemente para alinear con los pies
+            60f,
+            20f  // Aún más delgado para una base precisa
+        )
 
         actualizarCollisionBox()
+    }
+
+    private fun crearAnimacion(texture: Texture, frames: Int): Animation<TextureRegion> {
+        val temp = TextureRegion.split(texture, texture.width / frames, texture.height)
+        val framesArray = com.badlogic.gdx.utils.Array<TextureRegion>(frames)
+        for (i in 0 until frames) {
+            framesArray.add(temp[0][i])
+        }
+        return Animation(0.1f, framesArray, Animation.PlayMode.LOOP)
     }
 
     // =========================
@@ -57,7 +103,16 @@ class Player {
     // =========================
     fun update(delta: Float) {
 
+        if (isMoving) {
+            stateTime += delta
+        } else {
+            stateTime = 0f
+        }
+
         actualizarCollisionBox()
+
+        // Reset isMoving para el siguiente frame, procesarInput lo activará si hay presión
+        isMoving = false
     }
 
     // =========================
@@ -74,37 +129,21 @@ class Player {
     // =========================
     fun render(batch: SpriteBatch) {
 
-        val width = textura.width.toFloat()
-        val height = textura.height.toFloat()
+        val currentAnim = when (currentDirection) {
+            Direction.NORTH -> animNorth
+            Direction.SOUTH -> animSouth
+            Direction.EAST -> animEast
+            Direction.WEST -> animWest
+        }
 
-        /*
-            Si tu imagen original mira hacia la derecha,
-            esta configuración está bien.
-
-            Si al probar queda al revés, cambia:
-            val flipX = !mirandoDerecha
-            por:
-            val flipX = mirandoDerecha
-        */
-        val flipX = mirandoDerecha
+        val currentFrame = currentAnim.getKeyFrame(stateTime, true)
 
         batch.draw(
-            textura,
+            currentFrame,
             x,
             y,
-            0f,
-            0f,
-            width,
-            height,
-            1f,
-            1f,
-            0f,
-            0,
-            0,
-            textura.width,
-            textura.height,
-            flipX,
-            false
+            frameWidth * escala,
+            frameHeight * escala
         )
     }
 
@@ -113,24 +152,32 @@ class Player {
     // =========================
     fun moverIzquierda(delta: Float) {
 
-        mirandoDerecha = false
+        currentDirection = Direction.WEST
+        isMoving = true
 
         x -= velocidad * delta
     }
 
     fun moverDerecha(delta: Float) {
 
-        mirandoDerecha = true
+        currentDirection = Direction.EAST
+        isMoving = true
 
         x += velocidad * delta
     }
 
     fun moverArriba(delta: Float) {
 
+        currentDirection = Direction.NORTH
+        isMoving = true
+
         y += velocidad * delta
     }
 
     fun moverAbajo(delta: Float) {
+
+        currentDirection = Direction.SOUTH
+        isMoving = true
 
         y -= velocidad * delta
     }
@@ -173,12 +220,12 @@ class Player {
             y = 0f
         }
 
-        if (x > worldWidth - textura.width.toFloat()) {
-            x = worldWidth - textura.width.toFloat()
+        if (x > worldWidth - frameWidth * escala) {
+            x = worldWidth - frameWidth * escala
         }
 
-        if (y > worldHeight - textura.height.toFloat()) {
-            y = worldHeight - textura.height.toFloat()
+        if (y > worldHeight - frameHeight * escala) {
+            y = worldHeight - frameHeight * escala
         }
 
         actualizarCollisionBox()
@@ -189,10 +236,12 @@ class Player {
     // =========================
     private fun actualizarCollisionBox() {
 
-        collisionBox.x = x
-        collisionBox.y = y
-        collisionBox.width = textura.width.toFloat()
-        collisionBox.height = textura.height.toFloat()
+        val visualWidth = frameWidth * escala
+
+        collisionBox.x = x + (visualWidth / 2f) - 30f
+        collisionBox.y = y + 60f // Ajuste final para que esté en los pies (elevado 60px)
+        collisionBox.width = 60f
+        collisionBox.height = 20f
     }
 
     // =========================
@@ -200,12 +249,12 @@ class Player {
     // =========================
     fun getWidth(): Float {
 
-        return textura.width.toFloat()
+        return frameWidth * escala
     }
 
     fun getHeight(): Float {
 
-        return textura.height.toFloat()
+        return frameHeight * escala
     }
 
     // =========================
@@ -213,6 +262,9 @@ class Player {
     // =========================
     fun dispose() {
 
-        textura.dispose()
+        textureNorth.dispose()
+        textureSouth.dispose()
+        textureEast.dispose()
+        textureWest.dispose()
     }
 }
