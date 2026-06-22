@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class JuegoScreen(
@@ -54,6 +55,11 @@ class JuegoScreen(
     // JUGADOR
     // =========================
     private val player = Player()
+
+    // =========================
+    // DEBUG TOOLS
+    // =========================
+    private val debugManager = DebugManager("JuegoScreen", worldWidth, worldHeight)
 
     // =========================
     // ENTRADAS
@@ -170,6 +176,11 @@ class JuegoScreen(
         game.batch.end()
 
         // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
+
+        // =========================
         // DIBUJAR FLECHAS
         // =========================
         if (mostrarFlechas) {
@@ -220,9 +231,18 @@ class JuegoScreen(
 
         player.guardarPosicionAnterior()
 
+        val prevX = player.x
+        val prevY = player.y
+
         procesarInput(delta)
 
         player.update(delta)
+
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.x = prevX
+            player.y = prevY
+        }
 
         revisarEntradas()
 
@@ -243,6 +263,7 @@ class JuegoScreen(
         moviendoArriba = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera) // Reset dragging
             return
         }
 
@@ -256,6 +277,11 @@ class JuegoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
@@ -488,6 +514,8 @@ class JuegoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
 
         shapeRenderer.dispose()
     }

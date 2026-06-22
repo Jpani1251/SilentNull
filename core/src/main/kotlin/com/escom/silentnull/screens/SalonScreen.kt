@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
@@ -13,6 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class SalonScreen(
@@ -25,10 +27,15 @@ class SalonScreen(
 ) : Screen {
 
     // =========================
+    // TEXTURAS
+    // =========================
+    private val fondoSalon = Texture("salon_escom.png")
+
+    // =========================
     // MUNDO DEL SALON
     // =========================
-    private val worldWidth = 1800f
-    private val worldHeight = 1300f
+    private val worldWidth = 1920f
+    private val worldHeight = 1280f
 
     // =========================
     // CAMARAS
@@ -46,6 +53,11 @@ class SalonScreen(
     private val shapeRenderer = ShapeRenderer()
 
     // =========================
+    // DEBUG / GRID
+    // =========================
+    private val debugManager = DebugManager("Salon_${nombreSalon.replace(" ", "_")}", worldWidth, worldHeight)
+
+    // =========================
     // TEXTO
     // =========================
     private val font = BitmapFont()
@@ -58,11 +70,12 @@ class SalonScreen(
     // =========================
     // SALIDA DEL SALON
     // =========================
+    // La puerta en salon_escom.png está a la derecha, arriba.
     private val salidaSalon = CollisionBox(
-        if (edificioRegreso == 1) 0f else worldWidth - 260f,
-        worldHeight * 0.38f,
-        260f,
-        420f
+        worldWidth - 160f,
+        worldHeight * 0.65f,
+        130f,
+        180f
     )
 
     private var moviendoIzquierda = false
@@ -119,11 +132,10 @@ class SalonScreen(
             tamanoBoton
         )
 
-        // Si viene del Edificio 1, aparece cerca de la puerta izquierda.
-        // Si viene del Edificio 2, aparece cerca de la puerta derecha.
+        // Aparece cerca de la puerta (derecha)
         player.setPosition(
-            if (edificioRegreso == 1) 320f else worldWidth - 420f,
-            worldHeight * 0.46f
+            worldWidth - 220f,
+            worldHeight * 0.68f
         )
 
         resize(
@@ -147,31 +159,36 @@ class SalonScreen(
             return
         }
 
-        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
-
-        dibujarSalon()
+        ScreenUtils.clear(0f, 0f, 0f, 1f)
 
         game.batch.projectionMatrix = camera.combined
 
         game.batch.begin()
 
-        font.draw(
-            game.batch,
-            nombreSalon,
-            120f,
-            worldHeight - 120f
+        // Dibujar Fondo
+        game.batch.draw(
+            fondoSalon,
+            0f,
+            0f,
+            worldWidth,
+            worldHeight
         )
 
         font.draw(
             game.batch,
-            "Salida",
-            if (edificioRegreso == 1) 140f else worldWidth - 260f,
-            worldHeight * 0.38f + 470f
+            nombreSalon,
+            worldWidth / 2f - 100f,
+            worldHeight - 50f
         )
 
         player.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
 
         // =========================
         // HUD
@@ -191,221 +208,6 @@ class SalonScreen(
     }
 
     // =========================
-    // DIBUJAR SALON
-    // =========================
-    private fun dibujarSalon() {
-
-        shapeRenderer.projectionMatrix = camera.combined
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-        // Piso
-        shapeRenderer.color = Color(0.18f, 0.22f, 0.27f, 1f)
-        shapeRenderer.rect(
-            0f,
-            0f,
-            worldWidth,
-            worldHeight
-        )
-
-        // Paredes
-        shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
-
-        shapeRenderer.rect(
-            0f,
-            worldHeight - 110f,
-            worldWidth,
-            110f
-        )
-
-        shapeRenderer.rect(
-            0f,
-            0f,
-            worldWidth,
-            110f
-        )
-
-        shapeRenderer.rect(
-            0f,
-            0f,
-            110f,
-            worldHeight
-        )
-
-        shapeRenderer.rect(
-            worldWidth - 110f,
-            0f,
-            110f,
-            worldHeight
-        )
-
-        // Pizarron
-        shapeRenderer.color = Color(0.07f, 0.10f, 0.13f, 1f)
-        shapeRenderer.rect(
-            260f,
-            worldHeight - 250f,
-            720f,
-            70f
-        )
-
-        // Escritorio del profesor
-        shapeRenderer.color = Color(0.46f, 0.32f, 0.18f, 1f)
-        shapeRenderer.rect(
-            1130f,
-            worldHeight - 310f,
-            260f,
-            120f
-        )
-
-        // Bancas
-        dibujarBancas()
-
-        // Puerta
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
-
-        if (edificioRegreso == 1) {
-
-            shapeRenderer.rect(
-                50f,
-                worldHeight * 0.45f,
-                80f,
-                150f
-            )
-
-        } else {
-
-            shapeRenderer.rect(
-                worldWidth - 130f,
-                worldHeight * 0.45f,
-                80f,
-                150f
-            )
-        }
-
-        // Flecha de salida
-        shapeRenderer.color = Color.YELLOW
-
-        if (edificioRegreso == 1) {
-
-            dibujarFlechaIzquierda(
-                300f,
-                salidaSalon.y + salidaSalon.height / 2f,
-                45f
-            )
-
-        } else {
-
-            dibujarFlechaDerecha(
-                worldWidth - 300f,
-                salidaSalon.y + salidaSalon.height / 2f,
-                45f
-            )
-        }
-
-        shapeRenderer.end()
-    }
-
-    // =========================
-    // DIBUJAR BANCAS
-    // =========================
-    private fun dibujarBancas() {
-
-        val startX = 330f
-        val startY = 330f
-
-        val deskWidth = 130f
-        val deskHeight = 80f
-
-        val gapX = 210f
-        val gapY = 150f
-
-        for (fila in 0 until 4) {
-
-            for (columna in 0 until 4) {
-
-                val x = startX + columna * gapX
-                val y = startY + fila * gapY
-
-                // Mesa
-                shapeRenderer.color = Color(0.42f, 0.30f, 0.18f, 1f)
-                shapeRenderer.rect(
-                    x,
-                    y,
-                    deskWidth,
-                    deskHeight
-                )
-
-                // Silla
-                shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
-                shapeRenderer.rect(
-                    x + 35f,
-                    y - 55f,
-                    60f,
-                    45f
-                )
-            }
-        }
-    }
-
-    // =========================
-    // FLECHA DERECHA
-    // =========================
-    private fun dibujarFlechaDerecha(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
-
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
-
-        shapeRenderer.triangle(
-            centerX + size,
-            centerY,
-            centerX - size,
-            centerY + size,
-            centerX - size,
-            centerY - size
-        )
-
-        shapeRenderer.rect(
-            centerX - size - bodyLength,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
-    }
-
-    // =========================
-    // FLECHA IZQUIERDA
-    // =========================
-    private fun dibujarFlechaIzquierda(
-        centerX: Float,
-        centerY: Float,
-        size: Float
-    ) {
-
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
-
-        shapeRenderer.triangle(
-            centerX - size,
-            centerY,
-            centerX + size,
-            centerY + size,
-            centerX + size,
-            centerY - size
-        )
-
-        shapeRenderer.rect(
-            centerX + size,
-            centerY - bodyWidth / 2f,
-            bodyLength,
-            bodyWidth
-        )
-    }
-
-    // =========================
     // UPDATE
     // =========================
     private fun update(delta: Float) {
@@ -414,9 +216,18 @@ class SalonScreen(
             return
         }
 
+        val prevX = player.x
+        val prevY = player.y
+
         procesarInput(delta)
 
         player.update(delta)
+
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.x = prevX
+            player.y = prevY
+        }
 
         val salioDelSalon =
             revisarSalida()
@@ -446,6 +257,7 @@ class SalonScreen(
         moviendoDerecha = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera) // Reset dragging
             return
         }
 
@@ -459,6 +271,11 @@ class SalonScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
@@ -488,15 +305,8 @@ class SalonScreen(
     // =========================
     private fun revisarSalida(): Boolean {
 
-        val estaSaliendo =
-            if (edificioRegreso == 1) {
-                moviendoIzquierda
-            } else {
-                moviendoDerecha
-            }
-
         if (
-            estaSaliendo
+            moviendoDerecha
             &&
             player.collisionBox.overlaps(salidaSalon)
         ) {
@@ -707,12 +517,16 @@ class SalonScreen(
 
         font.dispose()
 
+        fondoSalon.dispose()
+
         player.dispose()
 
         btnIzq.dispose()
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
 
         recursosLiberados = true
     }
