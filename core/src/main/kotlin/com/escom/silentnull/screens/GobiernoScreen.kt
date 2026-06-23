@@ -1,16 +1,19 @@
 package com.escom.silentnull.screens
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
+import com.escom.silentnull.entities.Enemy
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.GameButton
@@ -36,24 +39,61 @@ class GobiernoScreen(
     private val touchPosition = Vector3()
 
     // =========================
-    // DIBUJO
+    // DIBUJO Y TEXTO
     // =========================
     private val shapeRenderer = ShapeRenderer()
-
-    // =========================
-    // TEXTO
-    // =========================
     private val font = BitmapFont()
+    private val combatFont = BitmapFont()
 
     // =========================
     // JUGADOR
     // =========================
     private val player = Player()
 
+    private val maxPlayerHealth = 100
+    private var playerHealth = maxPlayerHealth
+
+    private val playerDamage = 25
+    private val playerAttackRange = 170f
+    private val playerAttackCooldown = 0.45f
+    private var playerAttackTimer = 0f
+
+    private var playerInvulnerabilityTimer = 0f
+
+    // =========================
+    // ENEMIGO DE LA BIBLIOTECA
+    // =========================
+    private val enemy = Enemy(
+        startX = 1800f,
+        startY = 810f,
+        width = 95f,
+        height = 110f,
+        speed = 145f,
+        detectionRange = 520f,
+        attackRange = 105f,
+        maxHealth = 100
+    )
+
+    private val enemyMinX = 1420f
+    private val enemyMaxX = 2200f
+    private val enemyMinY = 650f
+    private val enemyMaxY = 960f
+
+    private val enemyDamage = 10
+    private val enemyAttackRange = 110f
+    private val enemyAttackCooldown = 0.85f
+    private var enemyAttackTimer = 0f
+
+    private var attackRequested = false
+
+    private var combatMessage =
+        "Derrota al enemigo para entrar a la biblioteca"
+
+    private var combatMessageTimer = 4f
+
     // =========================
     // ZONAS DE CAMBIO
     // =========================
-
     private val salidaGobierno = CollisionBox(
         0f,
         worldHeight * 0.38f,
@@ -82,59 +122,62 @@ class GobiernoScreen(
         360f
     )
 
-    private var moviendoIzquierda = false
-    private var moviendoDerecha = false
-    private var moviendoArriba = false
-    private var moviendoAbajo = false
-    private var cambiandoPantalla = false
+    private var movingLeft = false
+    private var movingRight = false
+    private var movingUp = false
+    private var movingDown = false
+    private var changingScreen = false
 
     // =========================
     // BOTONES
     // =========================
-    private val tamañoBoton = 150f
+    private val buttonSize = 150f
+    private val attackButtonSize = 180f
 
-    private lateinit var btnIzq: GameButton
-    private lateinit var btnDer: GameButton
-    private lateinit var btnArriba: GameButton
-    private lateinit var btnAbajo: GameButton
+    private lateinit var btnLeft: GameButton
+    private lateinit var btnRight: GameButton
+    private lateinit var btnUp: GameButton
+    private lateinit var btnDown: GameButton
+
+    private val attackButtonArea = Rectangle()
 
     // =========================
     // INIT
     // =========================
     init {
-
         font.data.setScale(2.4f)
+        combatFont.data.setScale(1.55f)
 
-        btnIzq = GameButton(
+        btnLeft = GameButton(
             "btn_izq.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            buttonSize,
+            buttonSize
         )
 
-        btnDer = GameButton(
+        btnRight = GameButton(
             "btn_der.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            buttonSize,
+            buttonSize
         )
 
-        btnArriba = GameButton(
+        btnUp = GameButton(
             "btn_arriba.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            buttonSize,
+            buttonSize
         )
 
-        btnAbajo = GameButton(
+        btnDown = GameButton(
             "btn_abajo.png",
             0f,
             0f,
-            tamañoBoton,
-            tamañoBoton
+            buttonSize,
+            buttonSize
         )
 
         player.setPosition(
@@ -152,19 +195,23 @@ class GobiernoScreen(
     // RENDER
     // =========================
     override fun render(delta: Float) {
-
         update(delta)
 
-        if (cambiandoPantalla) {
+        if (changingScreen) {
             return
         }
 
-        ScreenUtils.clear(0.04f, 0.04f, 0.06f, 1f)
+        ScreenUtils.clear(
+            0.04f,
+            0.04f,
+            0.06f,
+            1f
+        )
 
-        dibujarEdificioGobierno()
+        drawGovernmentBuilding()
+        drawEnemy()
 
         game.batch.projectionMatrix = camera.combined
-
         game.batch.begin()
 
         font.draw(
@@ -209,6 +256,15 @@ class GobiernoScreen(
             910f
         )
 
+        if (!enemy.isAlive) {
+            font.draw(
+                game.batch,
+                "Entrada desbloqueada",
+                1550f,
+                935f
+            )
+        }
+
         player.render(game.batch)
 
         game.batch.end()
@@ -218,29 +274,57 @@ class GobiernoScreen(
         // =========================
         hudViewport.apply()
 
-        game.batch.projectionMatrix = hudCamera.combined
+        drawCombatHud()
 
+        game.batch.projectionMatrix = hudCamera.combined
         game.batch.begin()
 
-        btnIzq.render(game.batch)
-        btnDer.render(game.batch)
-        btnArriba.render(game.batch)
-        btnAbajo.render(game.batch)
+        btnLeft.render(game.batch)
+        btnRight.render(game.batch)
+        btnUp.render(game.batch)
+        btnDown.render(game.batch)
+
+        combatFont.draw(
+            game.batch,
+            "VIDA: $playerHealth / $maxPlayerHealth",
+            38f,
+            hudViewport.worldHeight - 28f
+        )
+
+        combatFont.draw(
+            game.batch,
+            "ATACAR",
+            attackButtonArea.x + 24f,
+            attackButtonArea.y +
+                attackButtonArea.height / 2f + 12f
+        )
+
+        if (combatMessageTimer > 0f) {
+            combatFont.draw(
+                game.batch,
+                combatMessage,
+                hudViewport.worldWidth / 2f - 310f,
+                hudViewport.worldHeight - 35f
+            )
+        }
 
         game.batch.end()
     }
 
     // =========================
-    // DISEÑO
+    // DISEÑO DEL EDIFICIO
     // =========================
-    private fun dibujarEdificioGobierno() {
-
+    private fun drawGovernmentBuilding() {
         shapeRenderer.projectionMatrix = camera.combined
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
 
         // Piso general
-        shapeRenderer.color = Color(0.22f, 0.22f, 0.25f, 1f)
+        shapeRenderer.color =
+            Color(0.22f, 0.22f, 0.25f, 1f)
+
         shapeRenderer.rect(
             0f,
             0f,
@@ -249,7 +333,8 @@ class GobiernoScreen(
         )
 
         // Paredes exteriores
-        shapeRenderer.color = Color(0.10f, 0.10f, 0.13f, 1f)
+        shapeRenderer.color =
+            Color(0.10f, 0.10f, 0.13f, 1f)
 
         shapeRenderer.rect(
             0f,
@@ -280,7 +365,9 @@ class GobiernoScreen(
         )
 
         // Pasillo central
-        shapeRenderer.color = Color(0.30f, 0.30f, 0.34f, 1f)
+        shapeRenderer.color =
+            Color(0.30f, 0.30f, 0.34f, 1f)
+
         shapeRenderer.rect(
             250f,
             620f,
@@ -289,7 +376,9 @@ class GobiernoScreen(
         )
 
         // Recepción
-        shapeRenderer.color = Color(0.26f, 0.32f, 0.40f, 1f)
+        shapeRenderer.color =
+            Color(0.26f, 0.32f, 0.40f, 1f)
+
         shapeRenderer.rect(
             330f,
             690f,
@@ -298,7 +387,9 @@ class GobiernoScreen(
         )
 
         // Mostrador
-        shapeRenderer.color = Color(0.15f, 0.18f, 0.22f, 1f)
+        shapeRenderer.color =
+            Color(0.15f, 0.18f, 0.22f, 1f)
+
         shapeRenderer.rect(
             390f,
             745f,
@@ -306,8 +397,10 @@ class GobiernoScreen(
             70f
         )
 
-        // Biblioteca extendida
-        shapeRenderer.color = Color(0.16f, 0.24f, 0.33f, 1f)
+        // Biblioteca
+        shapeRenderer.color =
+            Color(0.16f, 0.24f, 0.33f, 1f)
+
         shapeRenderer.rect(
             900f,
             1040f,
@@ -315,22 +408,84 @@ class GobiernoScreen(
             360f
         )
 
-        // Estantes de Biblioteca
-        shapeRenderer.color = Color(0.09f, 0.12f, 0.17f, 1f)
+        // Estantes
+        shapeRenderer.color =
+            Color(0.09f, 0.12f, 0.17f, 1f)
 
-        shapeRenderer.rect(980f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1120f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1260f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1400f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1540f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1680f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1820f, 1110f, 80f, 230f)
-        shapeRenderer.rect(1960f, 1110f, 80f, 230f)
-        shapeRenderer.rect(2100f, 1110f, 80f, 230f)
-        shapeRenderer.rect(2240f, 1110f, 80f, 230f)
+        shapeRenderer.rect(
+            980f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1120f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1260f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1400f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1540f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1680f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1820f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            1960f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            2100f,
+            1110f,
+            80f,
+            230f
+        )
+
+        shapeRenderer.rect(
+            2240f,
+            1110f,
+            80f,
+            230f
+        )
 
         // Zona común
-        shapeRenderer.color = Color(0.28f, 0.25f, 0.22f, 1f)
+        shapeRenderer.color =
+            Color(0.28f, 0.25f, 0.22f, 1f)
+
         shapeRenderer.rect(
             850f,
             190f,
@@ -338,12 +493,25 @@ class GobiernoScreen(
             330f
         )
 
-        dibujarMesaConSillas(970f, 300f)
-        dibujarMesaConSillas(1210f, 300f)
-        dibujarMesaConSillas(1450f, 300f)
+        drawTableWithChairs(
+            970f,
+            300f
+        )
+
+        drawTableWithChairs(
+            1210f,
+            300f
+        )
+
+        drawTableWithChairs(
+            1450f,
+            300f
+        )
 
         // Auditorio
-        shapeRenderer.color = Color(0.25f, 0.18f, 0.22f, 1f)
+        shapeRenderer.color =
+            Color(0.25f, 0.18f, 0.22f, 1f)
+
         shapeRenderer.rect(
             worldWidth - 530f,
             640f,
@@ -352,7 +520,8 @@ class GobiernoScreen(
         )
 
         // Puertas
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color =
+            Color(0.55f, 0.38f, 0.20f, 1f)
 
         shapeRenderer.rect(
             1760f,
@@ -378,32 +547,138 @@ class GobiernoScreen(
         shapeRenderer.end()
 
         // Flechas
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
 
         shapeRenderer.color = Color.YELLOW
 
-        dibujarFlechaIzquierda(
+        drawLeftArrow(
             260f,
-            salidaGobierno.y + salidaGobierno.height / 2f,
+            salidaGobierno.y +
+                salidaGobierno.height / 2f,
             45f
         )
 
-        dibujarFlechaArriba(
-            entradaBiblioteca.x + entradaBiblioteca.width / 2f,
+        drawUpArrow(
+            entradaBiblioteca.x +
+                entradaBiblioteca.width / 2f,
             entradaBiblioteca.y - 65f,
             40f
         )
 
-        dibujarFlechaAbajo(
+        drawDownArrow(
             1230f,
             690f,
             40f
         )
 
-        dibujarFlechaDerecha(
+        drawRightArrow(
             entradaAuditorio.x - 100f,
-            entradaAuditorio.y + entradaAuditorio.height / 2f,
+            entradaAuditorio.y +
+                entradaAuditorio.height / 2f,
             45f
+        )
+
+        shapeRenderer.end()
+    }
+
+    // =========================
+    // DIBUJAR ENEMIGO
+    // =========================
+    private fun drawEnemy() {
+        shapeRenderer.projectionMatrix = camera.combined
+
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
+
+        enemy.render(shapeRenderer)
+
+        shapeRenderer.end()
+    }
+
+    // =========================
+    // HUD DE COMBATE
+    // =========================
+    private fun drawCombatHud() {
+        shapeRenderer.projectionMatrix = hudCamera.combined
+
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
+
+        val healthBarX = 35f
+        val healthBarY =
+            hudViewport.worldHeight - 82f
+
+        val healthBarWidth = 360f
+        val healthBarHeight = 30f
+
+        val healthPercentage =
+            playerHealth.toFloat() /
+                maxPlayerHealth.toFloat()
+
+        shapeRenderer.color =
+            Color(0.08f, 0.08f, 0.08f, 0.95f)
+
+        shapeRenderer.rect(
+            healthBarX,
+            healthBarY,
+            healthBarWidth,
+            healthBarHeight
+        )
+
+        shapeRenderer.color =
+            Color(0.10f, 0.72f, 0.20f, 1f)
+
+        shapeRenderer.rect(
+            healthBarX + 3f,
+            healthBarY + 3f,
+            (healthBarWidth - 6f) *
+                healthPercentage,
+            healthBarHeight - 6f
+        )
+
+        shapeRenderer.color =
+            if (playerAttackTimer <= 0f) {
+                Color(
+                    0.72f,
+                    0.10f,
+                    0.12f,
+                    0.95f
+                )
+            } else {
+                Color(
+                    0.30f,
+                    0.30f,
+                    0.32f,
+                    0.95f
+                )
+            }
+
+        shapeRenderer.rect(
+            attackButtonArea.x,
+            attackButtonArea.y,
+            attackButtonArea.width,
+            attackButtonArea.height
+        )
+
+        shapeRenderer.color =
+            Color(0.95f, 0.95f, 0.95f, 1f)
+
+        shapeRenderer.rect(
+            attackButtonArea.x + 34f,
+            attackButtonArea.y + 28f,
+            18f,
+            attackButtonArea.height - 56f
+        )
+
+        shapeRenderer.rect(
+            attackButtonArea.x + 18f,
+            attackButtonArea.y + 54f,
+            50f,
+            16f
         )
 
         shapeRenderer.end()
@@ -412,12 +687,13 @@ class GobiernoScreen(
     // =========================
     // MESA
     // =========================
-    private fun dibujarMesaConSillas(
+    private fun drawTableWithChairs(
         x: Float,
         y: Float
     ) {
+        shapeRenderer.color =
+            Color(0.45f, 0.32f, 0.20f, 1f)
 
-        shapeRenderer.color = Color(0.45f, 0.32f, 0.20f, 1f)
         shapeRenderer.rect(
             x,
             y,
@@ -425,7 +701,9 @@ class GobiernoScreen(
             80f
         )
 
-        shapeRenderer.color = Color(0.12f, 0.13f, 0.16f, 1f)
+        shapeRenderer.color =
+            Color(0.12f, 0.13f, 0.16f, 1f)
+
         shapeRenderer.rect(
             x + 30f,
             y + 95f,
@@ -444,12 +722,11 @@ class GobiernoScreen(
     // =========================
     // FLECHAS
     // =========================
-    private fun dibujarFlechaArriba(
+    private fun drawUpArrow(
         centerX: Float,
         centerY: Float,
         size: Float
     ) {
-
         val bodyWidth = size * 0.45f
         val bodyLength = size * 1.4f
 
@@ -470,12 +747,11 @@ class GobiernoScreen(
         )
     }
 
-    private fun dibujarFlechaAbajo(
+    private fun drawDownArrow(
         centerX: Float,
         centerY: Float,
         size: Float
     ) {
-
         val bodyWidth = size * 0.45f
         val bodyLength = size * 1.4f
 
@@ -496,12 +772,11 @@ class GobiernoScreen(
         )
     }
 
-    private fun dibujarFlechaDerecha(
+    private fun drawRightArrow(
         centerX: Float,
         centerY: Float,
         size: Float
     ) {
-
         val bodyWidth = size * 0.45f
         val bodyLength = size * 1.4f
 
@@ -522,12 +797,11 @@ class GobiernoScreen(
         )
     }
 
-    private fun dibujarFlechaIzquierda(
+    private fun drawLeftArrow(
         centerX: Float,
         centerY: Float,
         size: Float
     ) {
-
         val bodyWidth = size * 0.45f
         val bodyLength = size * 1.4f
 
@@ -552,85 +826,300 @@ class GobiernoScreen(
     // UPDATE
     // =========================
     private fun update(delta: Float) {
+        updateTimers(delta)
 
         player.guardarPosicionAnterior()
 
-        procesarInput(delta)
+        processInput(delta)
 
         player.update(delta)
 
-        revisarCambiosDeZona()
+        enemy.update(
+            delta = delta,
+            playerX = player.x,
+            playerY = player.y,
+            playerWidth = player.getWidth(),
+            playerHeight = player.getHeight(),
+            minX = enemyMinX,
+            maxX = enemyMaxX,
+            minY = enemyMinY,
+            maxY = enemyMaxY
+        )
+
+        processCombat()
+
+        if (changingScreen) {
+            return
+        }
+
+        checkZoneChanges()
+
+        if (changingScreen) {
+            return
+        }
 
         player.limitarPantalla(
             worldWidth,
             worldHeight
         )
 
-        actualizarCamara()
+        updateCamera()
+    }
+
+    // =========================
+    // TEMPORIZADORES
+    // =========================
+    private fun updateTimers(delta: Float) {
+        playerAttackTimer =
+            (playerAttackTimer - delta)
+                .coerceAtLeast(0f)
+
+        enemyAttackTimer =
+            (enemyAttackTimer - delta)
+                .coerceAtLeast(0f)
+
+        playerInvulnerabilityTimer =
+            (playerInvulnerabilityTimer - delta)
+                .coerceAtLeast(0f)
+
+        combatMessageTimer =
+            (combatMessageTimer - delta)
+                .coerceAtLeast(0f)
     }
 
     // =========================
     // INPUT
     // =========================
-    private fun procesarInput(delta: Float) {
+    private fun processInput(delta: Float) {
+        movingLeft =
+            Gdx.input.isKeyPressed(
+                Input.Keys.LEFT
+            ) ||
+                Gdx.input.isKeyPressed(
+                    Input.Keys.A
+                )
 
-        moviendoIzquierda = false
-        moviendoDerecha = false
-        moviendoArriba = false
-        moviendoAbajo = false
+        movingRight =
+            Gdx.input.isKeyPressed(
+                Input.Keys.RIGHT
+            ) ||
+                Gdx.input.isKeyPressed(
+                    Input.Keys.D
+                )
 
-        if (!Gdx.input.isTouched) {
-            return
+        movingUp =
+            Gdx.input.isKeyPressed(
+                Input.Keys.UP
+            ) ||
+                Gdx.input.isKeyPressed(
+                    Input.Keys.W
+                )
+
+        movingDown =
+            Gdx.input.isKeyPressed(
+                Input.Keys.DOWN
+            ) ||
+                Gdx.input.isKeyPressed(
+                    Input.Keys.S
+                )
+
+        attackRequested =
+            Gdx.input.isKeyJustPressed(
+                Input.Keys.SPACE
+            )
+
+        for (pointer in 0 until 5) {
+            if (!Gdx.input.isTouched(pointer)) {
+                continue
+            }
+
+            touchPosition.set(
+                Gdx.input.getX(pointer).toFloat(),
+                Gdx.input.getY(pointer).toFloat(),
+                0f
+            )
+
+            hudViewport.unproject(touchPosition)
+
+            val touchX = touchPosition.x
+            val touchY = touchPosition.y
+
+            if (
+                btnLeft.isTouched(
+                    touchX,
+                    touchY
+                )
+            ) {
+                movingLeft = true
+            }
+
+            if (
+                btnRight.isTouched(
+                    touchX,
+                    touchY
+                )
+            ) {
+                movingRight = true
+            }
+
+            if (
+                btnUp.isTouched(
+                    touchX,
+                    touchY
+                )
+            ) {
+                movingUp = true
+            }
+
+            if (
+                btnDown.isTouched(
+                    touchX,
+                    touchY
+                )
+            ) {
+                movingDown = true
+            }
+
+            if (
+                attackButtonArea.contains(
+                    touchX,
+                    touchY
+                )
+            ) {
+                attackRequested = true
+            }
         }
 
-        touchPosition.set(
-            Gdx.input.x.toFloat(),
-            Gdx.input.y.toFloat(),
-            0f
-        )
-
-        hudViewport.unproject(touchPosition)
-
-        val touchX = touchPosition.x
-        val touchY = touchPosition.y
-
-        if (btnIzq.isTouched(touchX, touchY)) {
-
-            moviendoIzquierda = true
+        if (movingLeft) {
             player.moverIzquierda(delta)
         }
 
-        if (btnDer.isTouched(touchX, touchY)) {
-
-            moviendoDerecha = true
+        if (movingRight) {
             player.moverDerecha(delta)
         }
 
-        if (btnArriba.isTouched(touchX, touchY)) {
-
-            moviendoArriba = true
+        if (movingUp) {
             player.moverArriba(delta)
         }
 
-        if (btnAbajo.isTouched(touchX, touchY)) {
-
-            moviendoAbajo = true
+        if (movingDown) {
             player.moverAbajo(delta)
         }
     }
 
     // =========================
-    // CAMBIO DE ZONAS
+    // COMBATE
     // =========================
-    private fun revisarCambiosDeZona() {
+    private fun processCombat() {
+        if (
+            attackRequested &&
+            playerAttackTimer <= 0f
+        ) {
+            playerAttackTimer =
+                playerAttackCooldown
+
+            if (
+                enemy.isPlayerInRange(
+                    playerX = player.x,
+                    playerY = player.y,
+                    playerWidth =
+                        player.getWidth(),
+                    playerHeight =
+                        player.getHeight(),
+                    range = playerAttackRange
+                )
+            ) {
+                enemy.takeDamage(playerDamage)
+
+                if (enemy.isAlive) {
+                    showCombatMessage(
+                        "Golpeaste al enemigo: " +
+                            "-$playerDamage de vida"
+                    )
+                } else {
+                    showCombatMessage(
+                        "Enemigo derrotado. " +
+                            "La biblioteca esta abierta",
+                        3f
+                    )
+                }
+            } else {
+                showCombatMessage(
+                    "El enemigo esta fuera de alcance"
+                )
+            }
+        }
 
         if (
-            moviendoIzquierda
-            &&
-            player.collisionBox.overlaps(salidaGobierno)
+            enemy.isAlive &&
+            enemyAttackTimer <= 0f &&
+            playerInvulnerabilityTimer <= 0f &&
+            enemy.isPlayerInRange(
+                playerX = player.x,
+                playerY = player.y,
+                playerWidth = player.getWidth(),
+                playerHeight = player.getHeight(),
+                range = enemyAttackRange
+            )
         ) {
+            playerHealth =
+                (playerHealth - enemyDamage)
+                    .coerceAtLeast(0)
 
-            cambiandoPantalla = true
+            enemyAttackTimer =
+                enemyAttackCooldown
+
+            playerInvulnerabilityTimer =
+                0.35f
+
+            showCombatMessage(
+                "El enemigo te golpeo: " +
+                    "-$enemyDamage de vida"
+            )
+        }
+
+        if (playerHealth <= 0) {
+            showGameOverScreen()
+        }
+    }
+
+    // =========================
+    // PANTALLA DE MUERTE
+    // =========================
+    private fun showGameOverScreen() {
+        if (changingScreen) {
+            return
+        }
+
+        changingScreen = true
+
+        game.screen = GameOverScreen(game)
+
+        dispose()
+    }
+
+    // =========================
+    // MENSAJE DE COMBATE
+    // =========================
+    private fun showCombatMessage(
+        message: String,
+        duration: Float = 1.5f
+    ) {
+        combatMessage = message
+        combatMessageTimer = duration
+    }
+
+    // =========================
+    // CAMBIO DE ZONAS
+    // =========================
+    private fun checkZoneChanges() {
+        if (
+            movingLeft &&
+            player.collisionBox.overlaps(
+                salidaGobierno
+            )
+        ) {
+            changingScreen = true
 
             game.screen = JuegoScreen(game)
 
@@ -640,12 +1129,27 @@ class GobiernoScreen(
         }
 
         if (
-            moviendoArriba
-            &&
-            player.collisionBox.overlaps(entradaBiblioteca)
+            movingUp &&
+            player.collisionBox.overlaps(
+                entradaBiblioteca
+            )
         ) {
+            if (enemy.isAlive) {
+                player.setPosition(
+                    player.x,
+                    entradaBiblioteca.y -
+                        player.getHeight() - 8f
+                )
 
-            cambiandoPantalla = true
+                showCombatMessage(
+                    "Primero derrota al enemigo " +
+                        "de la biblioteca"
+                )
+
+                return
+            }
+
+            changingScreen = true
 
             game.screen = BibliotecaScreen(game)
 
@@ -654,9 +1158,12 @@ class GobiernoScreen(
             return
         }
 
-        if (player.collisionBox.overlaps(entradaZonaComun)) {
-
-            cambiandoPantalla = true
+        if (
+            player.collisionBox.overlaps(
+                entradaZonaComun
+            )
+        ) {
+            changingScreen = true
 
             game.screen = ZonaComunScreen(game)
 
@@ -666,12 +1173,12 @@ class GobiernoScreen(
         }
 
         if (
-            moviendoDerecha
-            &&
-            player.collisionBox.overlaps(entradaAuditorio)
+            movingRight &&
+            player.collisionBox.overlaps(
+                entradaAuditorio
+            )
         ) {
-
-            cambiandoPantalla = true
+            changingScreen = true
 
             game.screen = AuditorioScreen(game)
 
@@ -684,13 +1191,14 @@ class GobiernoScreen(
     // =========================
     // CÁMARA
     // =========================
-    private fun actualizarCamara() {
-
+    private fun updateCamera() {
         val playerCenterX =
-            player.x + player.getWidth() / 2f
+            player.x +
+                player.getWidth() / 2f
 
         val playerCenterY =
-            player.y + player.getHeight() / 2f
+            player.y +
+                player.getHeight() / 2f
 
         val halfViewportWidth =
             camera.viewportWidth / 2f
@@ -698,11 +1206,17 @@ class GobiernoScreen(
         val halfViewportHeight =
             camera.viewportHeight / 2f
 
-        val minCameraX = halfViewportWidth
-        val maxCameraX = worldWidth - halfViewportWidth
+        val minCameraX =
+            halfViewportWidth
 
-        val minCameraY = halfViewportHeight
-        val maxCameraY = worldHeight - halfViewportHeight
+        val maxCameraX =
+            worldWidth - halfViewportWidth
+
+        val minCameraY =
+            halfViewportHeight
+
+        val maxCameraY =
+            worldHeight - halfViewportHeight
 
         val cameraX =
             if (minCameraX > maxCameraX) {
@@ -738,31 +1252,50 @@ class GobiernoScreen(
     // =========================
     // BOTONES
     // =========================
-    private fun posicionarBotones() {
+    private fun positionButtons() {
+        val marginX = 50f
+        val marginY = 50f
 
-        val margenX = 50f
-        val margenY = 50f
+        btnLeft.x = marginX
+        btnLeft.y =
+            marginY + buttonSize
 
-        btnIzq.x = margenX
-        btnIzq.y = margenY + tamañoBoton
+        btnRight.x =
+            marginX + buttonSize * 2f
 
-        btnDer.x = margenX + tamañoBoton * 2f
-        btnDer.y = margenY + tamañoBoton
+        btnRight.y =
+            marginY + buttonSize
 
-        btnArriba.x = margenX + tamañoBoton
-        btnArriba.y = margenY + tamañoBoton * 2f
+        btnUp.x =
+            marginX + buttonSize
 
-        btnAbajo.x = margenX + tamañoBoton
-        btnAbajo.y = margenY
+        btnUp.y =
+            marginY + buttonSize * 2f
+
+        btnDown.x =
+            marginX + buttonSize
+
+        btnDown.y = marginY
+
+        attackButtonArea.set(
+            hudViewport.worldWidth -
+                attackButtonSize - 65f,
+            65f,
+            attackButtonSize,
+            attackButtonSize
+        )
     }
 
     // =========================
     // MÉTODOS OBLIGATORIOS
     // =========================
-    override fun show() {}
+    override fun show() {
+    }
 
-    override fun resize(width: Int, height: Int) {
-
+    override fun resize(
+        width: Int,
+        height: Int
+    ) {
         camera.setToOrtho(
             false,
             width.toFloat(),
@@ -777,28 +1310,28 @@ class GobiernoScreen(
             true
         )
 
-        posicionarBotones()
-
-        actualizarCamara()
+        positionButtons()
+        updateCamera()
     }
 
-    override fun pause() {}
+    override fun pause() {
+    }
 
-    override fun resume() {}
+    override fun resume() {
+    }
 
-    override fun hide() {}
+    override fun hide() {
+    }
 
     override fun dispose() {
-
         shapeRenderer.dispose()
-
         font.dispose()
-
+        combatFont.dispose()
         player.dispose()
 
-        btnIzq.dispose()
-        btnDer.dispose()
-        btnArriba.dispose()
-        btnAbajo.dispose()
+        btnLeft.dispose()
+        btnRight.dispose()
+        btnUp.dispose()
+        btnDown.dispose()
     }
 }

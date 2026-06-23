@@ -22,13 +22,17 @@ class Edificio1SegundoPisoScreen(
     private val spawnY: Float? = null
 ) : Screen {
 
+    // =========================
+    // MUNDO
+    // =========================
     private val worldWidth = 2200f
     private val worldHeight = 4300f
 
     private val wallSize = 120f
 
-    // Edificio 1 como espejo del Edificio 2:
-    // Pasillo a la izquierda, salones/baños/escaleras a la derecha.
+    // =========================
+    // PASILLO Y SALONES
+    // =========================
     private val corridorX = 420f
     private val corridorWidth = 850f
 
@@ -36,32 +40,42 @@ class Edificio1SegundoPisoScreen(
     private val classroomHeight = 260f
     private val classroomGap = 115f
 
-    private val classroomX = worldWidth - 180f - classroomWidth
+    private val classroomX =
+        worldWidth - 180f - classroomWidth
+
     private val classroomStartY = 420f
 
     // Escaleras para bajar a planta baja.
     private val stairDownY =
-        classroomStartY + 3f * (classroomHeight + classroomGap)
+        classroomStartY +
+            3f * (classroomHeight + classroomGap)
 
     // Escaleras para subir al tercer piso.
-    // Van donde antes estaba el Salon 205.
     private val stairUpY =
-        classroomStartY + 4f * (classroomHeight + classroomGap)
+        classroomStartY +
+            4f * (classroomHeight + classroomGap)
 
     private val salon1109Y =
-        classroomStartY + 5f * (classroomHeight + classroomGap)
+        classroomStartY +
+            5f * (classroomHeight + classroomGap)
 
     private val salon1110Y =
-        classroomStartY + 6f * (classroomHeight + classroomGap)
+        classroomStartY +
+            6f * (classroomHeight + classroomGap)
 
     private val salon1111Y =
-        classroomStartY + 7f * (classroomHeight + classroomGap)
+        classroomStartY +
+            7f * (classroomHeight + classroomGap)
 
     private val bathroomY =
-        classroomStartY + 8f * (classroomHeight + classroomGap)
+        classroomStartY +
+            8f * (classroomHeight + classroomGap)
 
     private val bathroomHeight = 260f
 
+    // =========================
+    // CÁMARAS
+    // =========================
     private val camera = OrthographicCamera()
 
     private val hudCamera = OrthographicCamera()
@@ -69,20 +83,41 @@ class Edificio1SegundoPisoScreen(
 
     private val touchPosition = Vector3()
 
+    // =========================
+    // RECURSOS
+    // =========================
     private val shapeRenderer = ShapeRenderer()
     private val font = BitmapFont()
-
     private val player = Player()
 
-    // Conexión hacia segundo piso de Gobierno.
+    // =========================
+    // CONEXIÓN CON GOBIERNO P2
+    // =========================
     private val salidaGobiernoSegundoPiso = CollisionBox(
         corridorX - 220f,
-        classroomStartY + classroomHeight / 2f - 120f,
+        classroomStartY +
+            classroomHeight / 2f -
+            120f,
         360f,
         240f
     )
 
-    // Escaleras para bajar a planta baja.
+    // =========================
+    // CONEXIÓN CON EDIFICIO CENTRAL P2
+    // UBICADA A LA ALTURA DE LOS BAÑOS
+    // =========================
+    private val salidaEdificioCentralSegundoPiso = CollisionBox(
+        corridorX - 220f,
+        bathroomY +
+            bathroomHeight / 2f -
+            120f,
+        360f,
+        240f
+    )
+
+    // =========================
+    // ESCALERAS
+    // =========================
     private val entradaEscalerasBajar = CollisionBox(
         classroomX - 220f,
         stairDownY + 20f,
@@ -90,7 +125,6 @@ class Edificio1SegundoPisoScreen(
         classroomHeight - 40f
     )
 
-    // Escaleras para subir al tercer piso.
     private val entradaEscalerasSubir = CollisionBox(
         classroomX - 220f,
         stairUpY + 20f,
@@ -98,7 +132,9 @@ class Edificio1SegundoPisoScreen(
         classroomHeight - 40f
     )
 
-    // Baños con entrada superior.
+    // =========================
+    // BAÑOS
+    // =========================
     private val entradaBanoHombres = CollisionBox(
         classroomX + 20f,
         bathroomY + bathroomHeight - 20f,
@@ -107,12 +143,17 @@ class Edificio1SegundoPisoScreen(
     )
 
     private val entradaBanoMujeres = CollisionBox(
-        classroomX + classroomWidth / 2f + 20f,
+        classroomX +
+            classroomWidth / 2f +
+            20f,
         bathroomY + bathroomHeight - 20f,
         classroomWidth / 2f - 40f,
         160f
     )
 
+    // =========================
+    // SALONES
+    // =========================
     private data class SalonAccess(
         val nombre: String,
         val y: Float,
@@ -133,18 +174,28 @@ class Edificio1SegundoPisoScreen(
         val salon: SalonAccess? = null
     )
 
-    private val entradasSalones = crearEntradasSalones()
-    private val obstaculos = crearObstaculos()
+    private val entradasSalones =
+        crearEntradasSalones()
 
+    private val obstaculos =
+        crearObstaculos()
+
+    // =========================
+    // ESTADOS
+    // =========================
     private var moviendoAbajo = false
     private var moviendoIzquierda = false
     private var moviendoDerecha = false
+
     private var cambiandoPantalla = false
     private var recursosLiberados = false
 
     private var tiempoBloqueoAccesos = 0.35f
     private var tiempoBloqueoColisiones = 0.45f
 
+    // =========================
+    // BOTONES
+    // =========================
     private val tamanoBoton = 150f
 
     private lateinit var btnIzq: GameButton
@@ -152,6 +203,9 @@ class Edificio1SegundoPisoScreen(
     private lateinit var btnArriba: GameButton
     private lateinit var btnAbajo: GameButton
 
+    // =========================
+    // INICIALIZACIÓN
+    // =========================
     init {
 
         font.data.setScale(2.2f)
@@ -199,6 +253,9 @@ class Edificio1SegundoPisoScreen(
         )
     }
 
+    // =========================
+    // RENDER
+    // =========================
     override fun render(delta: Float) {
 
         if (cambiandoPantalla) {
@@ -211,11 +268,17 @@ class Edificio1SegundoPisoScreen(
             return
         }
 
-        ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
+        ScreenUtils.clear(
+            0.04f,
+            0.04f,
+            0.05f,
+            1f
+        )
 
         dibujarEdificio1SegundoPiso()
 
-        game.batch.projectionMatrix = camera.combined
+        game.batch.projectionMatrix =
+            camera.combined
 
         game.batch.begin()
 
@@ -230,15 +293,30 @@ class Edificio1SegundoPisoScreen(
             game.batch,
             "Gobierno 2P",
             wallSize + 35f,
-            classroomStartY + classroomHeight / 2f + 30f
+            classroomStartY +
+                classroomHeight / 2f +
+                30f
+        )
+
+        // Nueva etiqueta de la conexión central.
+        font.draw(
+            game.batch,
+            "Edificio Central P2",
+            wallSize + 20f,
+            bathroomY +
+                bathroomHeight / 2f +
+                30f
         )
 
         for (salon in entradasSalones) {
+
             font.draw(
                 game.batch,
                 salon.nombre,
                 classroomX + 190f,
-                salon.y + classroomHeight / 2f + 25f
+                salon.y +
+                    classroomHeight / 2f +
+                    25f
             )
         }
 
@@ -246,37 +324,49 @@ class Edificio1SegundoPisoScreen(
             game.batch,
             "Escaleras a PB",
             classroomX + 110f,
-            stairDownY + classroomHeight / 2f + 25f
+            stairDownY +
+                classroomHeight / 2f +
+                25f
         )
 
         font.draw(
             game.batch,
             "Escaleras a 3P",
             classroomX + 105f,
-            stairUpY + classroomHeight / 2f + 25f
+            stairUpY +
+                classroomHeight / 2f +
+                25f
         )
 
         font.draw(
             game.batch,
             "Bano H",
             classroomX + 70f,
-            bathroomY + bathroomHeight / 2f + 20f
+            bathroomY +
+                bathroomHeight / 2f +
+                20f
         )
 
         font.draw(
             game.batch,
             "Bano M",
             classroomX + 390f,
-            bathroomY + bathroomHeight / 2f + 20f
+            bathroomY +
+                bathroomHeight / 2f +
+                20f
         )
 
         player.render(game.batch)
 
         game.batch.end()
 
+        // =========================
+        // HUD
+        // =========================
         hudViewport.apply()
 
-        game.batch.projectionMatrix = hudCamera.combined
+        game.batch.projectionMatrix =
+            hudCamera.combined
 
         game.batch.begin()
 
@@ -288,14 +378,26 @@ class Edificio1SegundoPisoScreen(
         game.batch.end()
     }
 
+    // =========================
+    // DIBUJAR SEGUNDO PISO
+    // =========================
     private fun dibujarEdificio1SegundoPiso() {
 
-        shapeRenderer.projectionMatrix = camera.combined
+        shapeRenderer.projectionMatrix =
+            camera.combined
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.begin(
+            ShapeRenderer.ShapeType.Filled
+        )
 
-        // Piso general
-        shapeRenderer.color = Color(0.21f, 0.21f, 0.24f, 1f)
+        // Piso general.
+        shapeRenderer.color = Color(
+            0.21f,
+            0.21f,
+            0.24f,
+            1f
+        )
+
         shapeRenderer.rect(
             0f,
             0f,
@@ -303,8 +405,14 @@ class Edificio1SegundoPisoScreen(
             worldHeight
         )
 
-        // Pasillo principal
-        shapeRenderer.color = Color(0.32f, 0.32f, 0.36f, 1f)
+        // Pasillo principal.
+        shapeRenderer.color = Color(
+            0.32f,
+            0.32f,
+            0.36f,
+            1f
+        )
+
         shapeRenderer.rect(
             corridorX,
             wallSize,
@@ -312,8 +420,14 @@ class Edificio1SegundoPisoScreen(
             worldHeight - wallSize * 2f
         )
 
-        // Pasillo hacia Gobierno segundo piso
-        shapeRenderer.color = Color(0.34f, 0.34f, 0.39f, 1f)
+        // Pasillo hacia Gobierno.
+        shapeRenderer.color = Color(
+            0.34f,
+            0.34f,
+            0.39f,
+            1f
+        )
+
         shapeRenderer.rect(
             wallSize,
             classroomStartY + 45f,
@@ -321,17 +435,45 @@ class Edificio1SegundoPisoScreen(
             classroomHeight - 90f
         )
 
-        // Línea central del pasillo
-        shapeRenderer.color = Color(0.38f, 0.38f, 0.42f, 1f)
+        // Nuevo pasillo hacia Edificio Central.
+        shapeRenderer.color = Color(
+            0.34f,
+            0.34f,
+            0.39f,
+            1f
+        )
+
         shapeRenderer.rect(
-            corridorX + corridorWidth / 2f - 8f,
+            wallSize,
+            bathroomY + 45f,
+            corridorX - wallSize,
+            bathroomHeight - 90f
+        )
+
+        // Línea central del pasillo.
+        shapeRenderer.color = Color(
+            0.38f,
+            0.38f,
+            0.42f,
+            1f
+        )
+
+        shapeRenderer.rect(
+            corridorX +
+                corridorWidth / 2f -
+                8f,
             wallSize,
             16f,
             worldHeight - wallSize * 2f
         )
 
-        // Paredes exteriores
-        shapeRenderer.color = Color(0.08f, 0.08f, 0.11f, 1f)
+        // Paredes exteriores.
+        shapeRenderer.color = Color(
+            0.08f,
+            0.08f,
+            0.11f,
+            1f
+        )
 
         shapeRenderer.rect(
             0f,
@@ -361,8 +503,9 @@ class Edificio1SegundoPisoScreen(
             worldHeight
         )
 
-        // Salones lado derecho
+        // Salones.
         for (salon in entradasSalones) {
+
             dibujarSalonDerecho(
                 classroomX,
                 salon.y,
@@ -371,7 +514,7 @@ class Edificio1SegundoPisoScreen(
             )
         }
 
-        // Escaleras a planta baja
+        // Escaleras para bajar.
         dibujarEscalerasDerechas(
             classroomX,
             stairDownY,
@@ -379,7 +522,7 @@ class Edificio1SegundoPisoScreen(
             classroomHeight
         )
 
-        // Escaleras a tercer piso
+        // Escaleras para subir.
         dibujarEscalerasDerechas(
             classroomX,
             stairUpY,
@@ -387,7 +530,7 @@ class Edificio1SegundoPisoScreen(
             classroomHeight
         )
 
-        // Baños
+        // Baños.
         dibujarBanosDerechos(
             classroomX,
             bathroomY,
@@ -395,57 +538,101 @@ class Edificio1SegundoPisoScreen(
             bathroomHeight
         )
 
-        // Puerta hacia Gobierno segundo piso
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        // =========================
+        // PUERTAS
+        // =========================
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
+        // Puerta hacia Gobierno.
         shapeRenderer.rect(
             corridorX - 60f,
-            classroomStartY + classroomHeight / 2f - 60f,
+            classroomStartY +
+                classroomHeight / 2f -
+                60f,
             80f,
             120f
         )
 
-        // Flechas
+        // Nueva puerta hacia Edificio Central.
+        shapeRenderer.rect(
+            corridorX - 60f,
+            bathroomY +
+                bathroomHeight / 2f -
+                60f,
+            80f,
+            120f
+        )
+
+        // =========================
+        // FLECHAS
+        // =========================
         shapeRenderer.color = Color.YELLOW
 
-        // Regresar / conectar con Gobierno segundo piso
+        // Gobierno.
         dibujarFlechaIzquierda(
             corridorX + 80f,
-            classroomStartY + classroomHeight / 2f,
+            classroomStartY +
+                classroomHeight / 2f,
             45f
         )
 
-        // Entrar a escaleras para bajar
+        // Nueva conexión hacia Edificio Central.
+        dibujarFlechaIzquierda(
+            corridorX + 80f,
+            bathroomY +
+                bathroomHeight / 2f,
+            45f
+        )
+
+        // Escaleras para bajar.
         dibujarFlechaDerecha(
-            corridorX + corridorWidth - 70f,
-            stairDownY + classroomHeight / 2f,
+            corridorX +
+                corridorWidth -
+                70f,
+            stairDownY +
+                classroomHeight / 2f,
             45f
         )
 
-        // Entrar a escaleras para subir
+        // Escaleras para subir.
         dibujarFlechaDerecha(
-            corridorX + corridorWidth - 70f,
-            stairUpY + classroomHeight / 2f,
+            corridorX +
+                corridorWidth -
+                70f,
+            stairUpY +
+                classroomHeight / 2f,
             45f
         )
 
-        // Entrar a salones
+        // Salones.
         for (salon in entradasSalones) {
+
             dibujarFlechaDerecha(
-                corridorX + corridorWidth - 70f,
-                salon.entrada.y + salon.entrada.height / 2f,
+                corridorX +
+                    corridorWidth -
+                    70f,
+                salon.entrada.y +
+                    salon.entrada.height / 2f,
                 35f
             )
         }
 
-        // Entrar a baños por arriba
+        // Baños.
         dibujarFlechaAbajo(
-            entradaBanoHombres.x + entradaBanoHombres.width / 2f,
+            entradaBanoHombres.x +
+                entradaBanoHombres.width / 2f,
             entradaBanoHombres.y + 90f,
             35f
         )
 
         dibujarFlechaAbajo(
-            entradaBanoMujeres.x + entradaBanoMujeres.width / 2f,
+            entradaBanoMujeres.x +
+                entradaBanoMujeres.width / 2f,
             entradaBanoMujeres.y + 90f,
             35f
         )
@@ -453,6 +640,9 @@ class Edificio1SegundoPisoScreen(
         shapeRenderer.end()
     }
 
+    // =========================
+    // DIBUJAR SALÓN
+    // =========================
     private fun dibujarSalonDerecho(
         x: Float,
         y: Float,
@@ -460,7 +650,13 @@ class Edificio1SegundoPisoScreen(
         height: Float
     ) {
 
-        shapeRenderer.color = Color(0.17f, 0.23f, 0.30f, 1f)
+        shapeRenderer.color = Color(
+            0.17f,
+            0.23f,
+            0.30f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -468,7 +664,13 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -476,7 +678,13 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
         shapeRenderer.rect(
             x - 45f,
             y + height / 2f - 55f,
@@ -484,7 +692,13 @@ class Edificio1SegundoPisoScreen(
             110f
         )
 
-        shapeRenderer.color = Color(0.07f, 0.10f, 0.14f, 1f)
+        shapeRenderer.color = Color(
+            0.07f,
+            0.10f,
+            0.14f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + 120f,
             y + height - 90f,
@@ -493,6 +707,9 @@ class Edificio1SegundoPisoScreen(
         )
     }
 
+    // =========================
+    // DIBUJAR ESCALERAS
+    // =========================
     private fun dibujarEscalerasDerechas(
         x: Float,
         y: Float,
@@ -500,7 +717,13 @@ class Edificio1SegundoPisoScreen(
         height: Float
     ) {
 
-        shapeRenderer.color = Color(0.23f, 0.23f, 0.28f, 1f)
+        shapeRenderer.color = Color(
+            0.23f,
+            0.23f,
+            0.28f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -508,7 +731,13 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -516,7 +745,13 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
+
         shapeRenderer.rect(
             x - 55f,
             y + height / 2f - 60f,
@@ -524,7 +759,12 @@ class Edificio1SegundoPisoScreen(
             120f
         )
 
-        shapeRenderer.color = Color(0.13f, 0.13f, 0.17f, 1f)
+        shapeRenderer.color = Color(
+            0.13f,
+            0.13f,
+            0.17f,
+            1f
+        )
 
         var stepY = y + 35f
 
@@ -541,6 +781,9 @@ class Edificio1SegundoPisoScreen(
         }
     }
 
+    // =========================
+    // DIBUJAR BAÑOS
+    // =========================
     private fun dibujarBanosDerechos(
         x: Float,
         y: Float,
@@ -548,10 +791,17 @@ class Edificio1SegundoPisoScreen(
         height: Float
     ) {
 
-        val halfWidth = width / 2f
+        val halfWidth =
+            width / 2f
 
-        // Baño hombres
-        shapeRenderer.color = Color(0.18f, 0.25f, 0.30f, 1f)
+        // Baño de hombres.
+        shapeRenderer.color = Color(
+            0.18f,
+            0.25f,
+            0.30f,
+            1f
+        )
+
         shapeRenderer.rect(
             x,
             y,
@@ -559,8 +809,14 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        // Baño mujeres
-        shapeRenderer.color = Color(0.25f, 0.20f, 0.28f, 1f)
+        // Baño de mujeres.
+        shapeRenderer.color = Color(
+            0.25f,
+            0.20f,
+            0.28f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + halfWidth + 15f,
             y,
@@ -568,8 +824,14 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        // División central
-        shapeRenderer.color = Color(0.09f, 0.09f, 0.12f, 1f)
+        // División central.
+        shapeRenderer.color = Color(
+            0.09f,
+            0.09f,
+            0.12f,
+            1f
+        )
+
         shapeRenderer.rect(
             x + halfWidth - 15f,
             y,
@@ -577,7 +839,6 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        // Pared lateral izquierda
         shapeRenderer.rect(
             x,
             y,
@@ -585,7 +846,6 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        // Pared lateral derecha
         shapeRenderer.rect(
             x + width - 25f,
             y,
@@ -593,8 +853,13 @@ class Edificio1SegundoPisoScreen(
             height
         )
 
-        // Puertas superiores
-        shapeRenderer.color = Color(0.55f, 0.38f, 0.20f, 1f)
+        // Puertas superiores.
+        shapeRenderer.color = Color(
+            0.55f,
+            0.38f,
+            0.20f,
+            1f
+        )
 
         shapeRenderer.rect(
             x + 95f,
@@ -611,9 +876,14 @@ class Edificio1SegundoPisoScreen(
         )
     }
 
-    private fun crearEntradasSalones(): MutableList<SalonAccess> {
+    // =========================
+    // CREAR ENTRADAS DE SALONES
+    // =========================
+    private fun crearEntradasSalones():
+        MutableList<SalonAccess> {
 
-        val lista = mutableListOf<SalonAccess>()
+        val lista =
+            mutableListOf<SalonAccess>()
 
         fun agregarSalon(
             nombre: String,
@@ -626,12 +896,16 @@ class Edificio1SegundoPisoScreen(
                     y,
                     CollisionBox(
                         classroomX - 220f,
-                        y + classroomHeight / 2f - 85f,
+                        y +
+                            classroomHeight / 2f -
+                            85f,
                         260f,
                         170f
                     ),
-                    corridorX + corridorWidth / 2f,
-                    y + classroomHeight / 2f
+                    corridorX +
+                        corridorWidth / 2f,
+                    y +
+                        classroomHeight / 2f
                 )
             )
         }
@@ -643,17 +917,17 @@ class Edificio1SegundoPisoScreen(
 
         agregarSalon(
             "Salon 1107",
-            classroomStartY + 1f * (classroomHeight + classroomGap)
+            classroomStartY +
+                classroomHeight +
+                classroomGap
         )
 
         agregarSalon(
             "Salon 1108",
-            classroomStartY + 2f * (classroomHeight + classroomGap)
+            classroomStartY +
+                2f *
+                (classroomHeight + classroomGap)
         )
-
-        // Aquí va la escalera para bajar a planta baja.
-
-        // Aquí va la escalera para subir al tercer piso.
 
         agregarSalon(
             "Salon 1109",
@@ -673,9 +947,14 @@ class Edificio1SegundoPisoScreen(
         return lista
     }
 
-    private fun crearObstaculos(): MutableList<CollisionBox> {
+    // =========================
+    // CREAR OBSTÁCULOS
+    // =========================
+    private fun crearObstaculos():
+        MutableList<CollisionBox> {
 
-        val lista = mutableListOf<CollisionBox>()
+        val lista =
+            mutableListOf<CollisionBox>()
 
         lista.add(
             CollisionBox(
@@ -714,6 +993,7 @@ class Edificio1SegundoPisoScreen(
         )
 
         for (salon in entradasSalones) {
+
             lista.add(
                 CollisionBox(
                     classroomX,
@@ -754,9 +1034,13 @@ class Edificio1SegundoPisoScreen(
         return lista
     }
 
+    // =========================
+    // DETECCIÓN DE ACCESOS
+    // =========================
     private fun centroYJugador(): Float {
 
-        return player.collisionBox.y + player.collisionBox.height / 2f
+        return player.collisionBox.y +
+            player.collisionBox.height / 2f
     }
 
     private fun distanciaVertical(
@@ -764,10 +1048,12 @@ class Edificio1SegundoPisoScreen(
     ): Float {
 
         val centroAccesoY =
-            acceso.y + acceso.height / 2f
+            acceso.y +
+                acceso.height / 2f
 
         return abs(
-            centroYJugador() - centroAccesoY
+            centroYJugador() -
+                centroAccesoY
         )
     }
 
@@ -782,30 +1068,47 @@ class Edificio1SegundoPisoScreen(
             player.collisionBox.x
 
         val jugadorDerecha =
-            player.collisionBox.x + player.collisionBox.width
+            player.collisionBox.x +
+                player.collisionBox.width
 
         val jugadorCentroY =
             centroYJugador()
 
         val tocaHorizontalmente =
-            jugadorDerecha >= acceso.x - margenX &&
-                jugadorIzquierda <= acceso.x + acceso.width + margenX
+            jugadorDerecha >=
+                acceso.x -
+                margenX &&
+                jugadorIzquierda <=
+                acceso.x +
+                acceso.width +
+                margenX
 
         val tocaVerticalmente =
-            jugadorCentroY >= acceso.y - margenY &&
-                jugadorCentroY <= acceso.y + acceso.height + margenY
+            jugadorCentroY >=
+                acceso.y -
+                margenY &&
+                jugadorCentroY <=
+                acceso.y +
+                acceso.height +
+                margenY
 
-        return tocaHorizontalmente && tocaVerticalmente
+        return tocaHorizontalmente &&
+            tocaVerticalmente
     }
 
-    private fun obtenerAccesoDerecho(): AccesoDerechoDetectado? {
+    private fun obtenerAccesoDerecho():
+        AccesoDerechoDetectado? {
 
         val candidatos =
             mutableListOf<AccesoDerechoDetectado>()
 
         for (salon in entradasSalones) {
 
-            if (tocaAccesoDerecho(salon.entrada)) {
+            if (
+                tocaAccesoDerecho(
+                    salon.entrada
+                )
+            ) {
 
                 candidatos.add(
                     AccesoDerechoDetectado(
@@ -817,7 +1120,11 @@ class Edificio1SegundoPisoScreen(
             }
         }
 
-        if (tocaAccesoDerecho(entradaEscalerasBajar)) {
+        if (
+            tocaAccesoDerecho(
+                entradaEscalerasBajar
+            )
+        ) {
 
             candidatos.add(
                 AccesoDerechoDetectado(
@@ -827,7 +1134,11 @@ class Edificio1SegundoPisoScreen(
             )
         }
 
-        if (tocaAccesoDerecho(entradaEscalerasSubir)) {
+        if (
+            tocaAccesoDerecho(
+                entradaEscalerasSubir
+            )
+        ) {
 
             candidatos.add(
                 AccesoDerechoDetectado(
@@ -842,27 +1153,63 @@ class Edificio1SegundoPisoScreen(
         }
     }
 
+    // =========================
+    // REVISAR ACCESOS
+    // =========================
     private fun revisarAccesos(): Boolean {
 
-        // Regresar / conectar con segundo piso de Gobierno.
+        // =========================
+        // EDIFICIO CENTRAL P2
+        // Se revisa antes que Gobierno.
+        // =========================
         if (
-            moviendoIzquierda
-            &&
-            player.collisionBox.overlaps(salidaGobiernoSegundoPiso)
+            moviendoIzquierda &&
+            player.collisionBox.overlaps(
+                salidaEdificioCentralSegundoPiso
+            )
         ) {
 
             cambiandoPantalla = true
 
-            game.screen = EdificioGobiernoSegundoPisoScreen(
-                game,
-                1770f,
-                750f
-            )
+            /*
+             * Entra por el lado derecho del Edificio Central.
+             * La posición evita un regreso inmediato.
+             */
+            game.screen =
+                EdificioCentralSegundoPisoScreen(
+                    game,
+                    1680f,
+                    750f
+                )
 
             return true
         }
 
-        // Entradas lado derecho: salones y escaleras.
+        // =========================
+        // GOBIERNO P2
+        // =========================
+        if (
+            moviendoIzquierda &&
+            player.collisionBox.overlaps(
+                salidaGobiernoSegundoPiso
+            )
+        ) {
+
+            cambiandoPantalla = true
+
+            game.screen =
+                EdificioGobiernoSegundoPisoScreen(
+                    game,
+                    1770f,
+                    750f
+                )
+
+            return true
+        }
+
+        // =========================
+        // SALONES Y ESCALERAS
+        // =========================
         if (moviendoDerecha) {
 
             val accesoDerecho =
@@ -875,7 +1222,8 @@ class Edificio1SegundoPisoScreen(
                     TipoAccesoDerecho.SALON -> {
 
                         val salon =
-                            accesoDerecho.salon ?: return false
+                            accesoDerecho.salon
+                                ?: return false
 
                         cambiandoPantalla = true
 
@@ -897,8 +1245,10 @@ class Edificio1SegundoPisoScreen(
 
                         game.screen = Edificio1Screen(
                             game,
-                            corridorX + corridorWidth / 2f,
-                            stairDownY + classroomHeight / 2f
+                            corridorX +
+                                corridorWidth / 2f,
+                            stairDownY +
+                                classroomHeight / 2f
                         )
 
                         return true
@@ -908,12 +1258,15 @@ class Edificio1SegundoPisoScreen(
 
                         cambiandoPantalla = true
 
-                        game.screen = Edificio1PisoSuperiorScreen(
-                            game,
-                            3,
-                            corridorX + corridorWidth / 2f,
-                            stairUpY + classroomHeight / 2f
-                        )
+                        game.screen =
+                            Edificio1PisoSuperiorScreen(
+                                game,
+                                3,
+                                corridorX +
+                                    corridorWidth / 2f,
+                                stairUpY +
+                                    classroomHeight / 2f
+                            )
 
                         return true
                     }
@@ -921,11 +1274,14 @@ class Edificio1SegundoPisoScreen(
             }
         }
 
-        // Entrar a baño hombres por la parte superior.
+        // =========================
+        // BAÑO HOMBRES
+        // =========================
         if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(entradaBanoHombres)
+            moviendoAbajo &&
+            player.collisionBox.overlaps(
+                entradaBanoHombres
+            )
         ) {
 
             cambiandoPantalla = true
@@ -933,8 +1289,10 @@ class Edificio1SegundoPisoScreen(
             game.screen = BanoScreen(
                 game,
                 "Bano de Hombres",
-                corridorX + corridorWidth / 2f,
-                bathroomY + bathroomHeight / 2f,
+                corridorX +
+                    corridorWidth / 2f,
+                bathroomY +
+                    bathroomHeight / 2f,
                 2,
                 1
             )
@@ -942,11 +1300,14 @@ class Edificio1SegundoPisoScreen(
             return true
         }
 
-        // Entrar a baño mujeres por la parte superior.
+        // =========================
+        // BAÑO MUJERES
+        // =========================
         if (
-            moviendoAbajo
-            &&
-            player.collisionBox.overlaps(entradaBanoMujeres)
+            moviendoAbajo &&
+            player.collisionBox.overlaps(
+                entradaBanoMujeres
+            )
         ) {
 
             cambiandoPantalla = true
@@ -954,8 +1315,10 @@ class Edificio1SegundoPisoScreen(
             game.screen = BanoScreen(
                 game,
                 "Bano de Mujeres",
-                corridorX + corridorWidth / 2f,
-                bathroomY + bathroomHeight / 2f,
+                corridorX +
+                    corridorWidth / 2f,
+                bathroomY +
+                    bathroomHeight / 2f,
                 2,
                 1
             )
@@ -966,27 +1329,39 @@ class Edificio1SegundoPisoScreen(
         return false
     }
 
+    // =========================
+    // COLISIONES
+    // =========================
     private fun revisarColisiones() {
 
         for (obstaculo in obstaculos) {
 
-            if (player.collisionBox.overlaps(obstaculo)) {
+            if (
+                player.collisionBox.overlaps(
+                    obstaculo
+                )
+            ) {
 
                 player.revertirMovimiento()
-
                 return
             }
         }
     }
 
+    // =========================
+    // FLECHAS
+    // =========================
     private fun dibujarFlechaIzquierda(
         centerX: Float,
         centerY: Float,
         size: Float
     ) {
 
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
+        val bodyWidth =
+            size * 0.45f
+
+        val bodyLength =
+            size * 1.4f
 
         shapeRenderer.triangle(
             centerX - size,
@@ -1011,8 +1386,11 @@ class Edificio1SegundoPisoScreen(
         size: Float
     ) {
 
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
+        val bodyWidth =
+            size * 0.45f
+
+        val bodyLength =
+            size * 1.4f
 
         shapeRenderer.triangle(
             centerX + size,
@@ -1024,8 +1402,11 @@ class Edificio1SegundoPisoScreen(
         )
 
         shapeRenderer.rect(
-            centerX - size - bodyLength,
-            centerY - bodyWidth / 2f,
+            centerX -
+                size -
+                bodyLength,
+            centerY -
+                bodyWidth / 2f,
             bodyLength,
             bodyWidth
         )
@@ -1037,8 +1418,11 @@ class Edificio1SegundoPisoScreen(
         size: Float
     ) {
 
-        val bodyWidth = size * 0.45f
-        val bodyLength = size * 1.4f
+        val bodyWidth =
+            size * 0.45f
+
+        val bodyLength =
+            size * 1.4f
 
         shapeRenderer.triangle(
             centerX,
@@ -1050,13 +1434,17 @@ class Edificio1SegundoPisoScreen(
         )
 
         shapeRenderer.rect(
-            centerX - bodyWidth / 2f,
+            centerX -
+                bodyWidth / 2f,
             centerY + size,
             bodyWidth,
             bodyLength
         )
     }
 
+    // =========================
+    // UPDATE
+    // =========================
     private fun update(delta: Float) {
 
         if (cambiandoPantalla) {
@@ -1069,8 +1457,12 @@ class Edificio1SegundoPisoScreen(
 
         player.update(delta)
 
-        if (tiempoBloqueoAccesos > 0f) {
+        if (
+            tiempoBloqueoAccesos > 0f
+        ) {
+
             tiempoBloqueoAccesos -= delta
+
         } else {
 
             val cambioPantalla =
@@ -1081,9 +1473,14 @@ class Edificio1SegundoPisoScreen(
             }
         }
 
-        if (tiempoBloqueoColisiones > 0f) {
+        if (
+            tiempoBloqueoColisiones > 0f
+        ) {
+
             tiempoBloqueoColisiones -= delta
+
         } else {
+
             revisarColisiones()
         }
 
@@ -1095,6 +1492,9 @@ class Edificio1SegundoPisoScreen(
         actualizarCamara()
     }
 
+    // =========================
+    // INPUT
+    // =========================
     private fun procesarInput(delta: Float) {
 
         if (cambiandoPantalla) {
@@ -1115,42 +1515,72 @@ class Edificio1SegundoPisoScreen(
             0f
         )
 
-        hudViewport.unproject(touchPosition)
+        hudViewport.unproject(
+            touchPosition
+        )
 
-        val touchX = touchPosition.x
-        val touchY = touchPosition.y
+        val touchX =
+            touchPosition.x
 
-        if (btnIzq.isTouched(touchX, touchY)) {
+        val touchY =
+            touchPosition.y
+
+        if (
+            btnIzq.isTouched(
+                touchX,
+                touchY
+            )
+        ) {
 
             moviendoIzquierda = true
             player.moverIzquierda(delta)
         }
 
-        if (btnDer.isTouched(touchX, touchY)) {
+        if (
+            btnDer.isTouched(
+                touchX,
+                touchY
+            )
+        ) {
 
             moviendoDerecha = true
             player.moverDerecha(delta)
         }
 
-        if (btnArriba.isTouched(touchX, touchY)) {
+        if (
+            btnArriba.isTouched(
+                touchX,
+                touchY
+            )
+        ) {
 
             player.moverArriba(delta)
         }
 
-        if (btnAbajo.isTouched(touchX, touchY)) {
+        if (
+            btnAbajo.isTouched(
+                touchX,
+                touchY
+            )
+        ) {
 
             moviendoAbajo = true
             player.moverAbajo(delta)
         }
     }
 
+    // =========================
+    // CÁMARA
+    // =========================
     private fun actualizarCamara() {
 
         val playerCenterX =
-            player.x + player.getWidth() / 2f
+            player.x +
+                player.getWidth() / 2f
 
         val playerCenterY =
-            player.y + player.getHeight() / 2f
+            player.y +
+                player.getHeight() / 2f
 
         val halfViewportWidth =
             camera.viewportWidth / 2f
@@ -1158,16 +1588,29 @@ class Edificio1SegundoPisoScreen(
         val halfViewportHeight =
             camera.viewportHeight / 2f
 
-        val minCameraX = halfViewportWidth
-        val maxCameraX = worldWidth - halfViewportWidth
+        val minCameraX =
+            halfViewportWidth
 
-        val minCameraY = halfViewportHeight
-        val maxCameraY = worldHeight - halfViewportHeight
+        val maxCameraX =
+            worldWidth -
+                halfViewportWidth
+
+        val minCameraY =
+            halfViewportHeight
+
+        val maxCameraY =
+            worldHeight -
+                halfViewportHeight
 
         val cameraX =
-            if (minCameraX > maxCameraX) {
+            if (
+                minCameraX > maxCameraX
+            ) {
+
                 worldWidth / 2f
+
             } else {
+
                 MathUtils.clamp(
                     playerCenterX,
                     minCameraX,
@@ -1176,9 +1619,14 @@ class Edificio1SegundoPisoScreen(
             }
 
         val cameraY =
-            if (minCameraY > maxCameraY) {
+            if (
+                minCameraY > maxCameraY
+            ) {
+
                 worldHeight / 2f
+
             } else {
+
                 MathUtils.clamp(
                     playerCenterY,
                     minCameraY,
@@ -1195,27 +1643,48 @@ class Edificio1SegundoPisoScreen(
         camera.update()
     }
 
+    // =========================
+    // BOTONES
+    // =========================
     private fun posicionarBotones() {
 
         val margenX = 50f
         val margenY = 50f
 
-        btnIzq.x = margenX
-        btnIzq.y = margenY + tamanoBoton
+        btnIzq.x =
+            margenX
 
-        btnDer.x = margenX + tamanoBoton * 2f
-        btnDer.y = margenY + tamanoBoton
+        btnIzq.y =
+            margenY + tamanoBoton
 
-        btnArriba.x = margenX + tamanoBoton
-        btnArriba.y = margenY + tamanoBoton * 2f
+        btnDer.x =
+            margenX + tamanoBoton * 2f
 
-        btnAbajo.x = margenX + tamanoBoton
-        btnAbajo.y = margenY
+        btnDer.y =
+            margenY + tamanoBoton
+
+        btnArriba.x =
+            margenX + tamanoBoton
+
+        btnArriba.y =
+            margenY + tamanoBoton * 2f
+
+        btnAbajo.x =
+            margenX + tamanoBoton
+
+        btnAbajo.y =
+            margenY
     }
 
+    // =========================
+    // MÉTODOS DE SCREEN
+    // =========================
     override fun show() {}
 
-    override fun resize(width: Int, height: Int) {
+    override fun resize(
+        width: Int,
+        height: Int
+    ) {
 
         camera.setToOrtho(
             false,
@@ -1232,7 +1701,6 @@ class Edificio1SegundoPisoScreen(
         )
 
         posicionarBotones()
-
         actualizarCamara()
     }
 
@@ -1241,7 +1709,6 @@ class Edificio1SegundoPisoScreen(
     override fun resume() {}
 
     override fun hide() {
-
         dispose()
     }
 
@@ -1252,9 +1719,7 @@ class Edificio1SegundoPisoScreen(
         }
 
         shapeRenderer.dispose()
-
         font.dispose()
-
         player.dispose()
 
         btnIzq.dispose()
