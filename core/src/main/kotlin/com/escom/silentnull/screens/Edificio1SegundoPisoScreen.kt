@@ -15,6 +15,7 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
+import com.escom.silentnull.ui.TransitionManager
 import kotlin.math.abs
 
 class Edificio1SegundoPisoScreen(
@@ -91,6 +92,7 @@ class Edificio1SegundoPisoScreen(
     private val font = BitmapFont()
     private val player = Player()
     private val debugManager = DebugManager("Edificio1_2P", worldWidth, worldHeight)
+    private val transitionManager = TransitionManager()
 
     // =========================
     // CONEXIÓN CON GOBIERNO P2
@@ -260,15 +262,7 @@ class Edificio1SegundoPisoScreen(
     // =========================
     override fun render(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         update(delta)
-
-        if (cambiandoPantalla) {
-            return
-        }
 
         ScreenUtils.clear(
             0.04f,
@@ -383,6 +377,11 @@ class Edificio1SegundoPisoScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // TRANSICIÓN
+        // =========================
+        transitionManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -1165,6 +1164,11 @@ class Edificio1SegundoPisoScreen(
     // =========================
     private fun revisarAccesos(): Boolean {
 
+        // Reset estado botón abrir
+        transitionManager.setShowButton(false)
+
+        if (cambiandoPantalla) return false
+
         // =========================
         // EDIFICIO CENTRAL P2
         // Se revisa antes que Gobierno.
@@ -1232,18 +1236,10 @@ class Edificio1SegundoPisoScreen(
                             accesoDerecho.salon
                                 ?: return false
 
-                        cambiandoPantalla = true
+                        // Mostrar botón abrir
+                        transitionManager.setShowButton(true)
 
-                        game.screen = SalonScreen(
-                            game,
-                            salon.nombre,
-                            salon.regresoX,
-                            salon.regresoY,
-                            2,
-                            1
-                        )
-
-                        return true
+                        return false
                     }
 
                     TipoAccesoDerecho.ESCALERAS_BAJAR -> {
@@ -1454,15 +1450,20 @@ class Edificio1SegundoPisoScreen(
     // =========================
     private fun update(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         player.guardarPosicionAnterior()
 
-        procesarInput(delta)
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
 
         player.update(delta)
+
+        transitionManager.update(delta)
+
+        if (cambiandoPantalla) {
+            actualizarCamara()
+            return
+        }
 
         if (
             tiempoBloqueoAccesos > 0f
@@ -1540,6 +1541,37 @@ class Edificio1SegundoPisoScreen(
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
+
+        // Manejar botón ABRIR
+        if (transitionManager.handleInput(touchX, touchY)) {
+            val acceso = obtenerAccesoDerecho()
+            if (acceso != null && acceso.tipo == TipoAccesoDerecho.SALON) {
+                val salon = acceso.salon!!
+                cambiandoPantalla = true
+                transitionManager.startFade {
+                    game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
+                        game.screen = SalonScreen(
+                            game,
+                            salon.nombre,
+                            salon.regresoX,
+                            salon.regresoY,
+                            2,
+                            1
+                        )
+                    } ?: run {
+                        game.screen = SalonScreen(
+                            game,
+                            salon.nombre,
+                            salon.regresoX,
+                            salon.regresoY,
+                            2,
+                            1
+                        )
+                    }
+                }
+            }
             return
         }
 
@@ -1746,6 +1778,7 @@ class Edificio1SegundoPisoScreen(
         btnAbajo.dispose()
 
         debugManager.dispose()
+        transitionManager.dispose()
 
         recursosLiberados = true
     }

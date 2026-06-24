@@ -15,6 +15,7 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
+import com.escom.silentnull.ui.TransitionManager
 
 class EdificioGobiernoSegundoPisoScreen(
     private val game: SilentNullGame,
@@ -53,6 +54,7 @@ class EdificioGobiernoSegundoPisoScreen(
     // =========================
     private val player = Player()
     private val debugManager = DebugManager("EdificioGobierno2P", worldWidth, worldHeight)
+    private val transitionManager = TransitionManager()
 
     // =========================
     // CONEXIÓN DE REGRESO AL EDIFICIO 2
@@ -191,15 +193,7 @@ class EdificioGobiernoSegundoPisoScreen(
     // =========================
     override fun render(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         update(delta)
-
-        if (cambiandoPantalla) {
-            return
-        }
 
         ScreenUtils.clear(0.04f, 0.04f, 0.05f, 1f)
 
@@ -270,6 +264,11 @@ class EdificioGobiernoSegundoPisoScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // TRANSICIÓN
+        // =========================
+        transitionManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -597,6 +596,11 @@ class EdificioGobiernoSegundoPisoScreen(
     // =========================
     private fun revisarAccesos(): Boolean {
 
+        // Reset botón abrir
+        transitionManager.setShowButton(false)
+
+        if (cambiandoPantalla) return false
+
         // Regresar al Edificio 2 segundo piso
         if (
             moviendoIzquierda
@@ -622,16 +626,9 @@ class EdificioGobiernoSegundoPisoScreen(
 
                 if (tocaAccesoAbajo(salon.entrada)) {
 
-                    cambiandoPantalla = true
-
-                    game.screen = SalonGobiernoScreen(
-                        game,
-                        salon.nombre,
-                        salon.regresoX,
-                        salon.regresoY
-                    )
-
-                    return true
+                    // Mostrar botón abrir
+                    transitionManager.setShowButton(true)
+                    return false
                 }
             }
         }
@@ -817,16 +814,21 @@ class EdificioGobiernoSegundoPisoScreen(
     // =========================
     private fun update(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         val prevX = player.x
         val prevY = player.y
 
-        procesarInput(delta)
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
 
         player.update(delta)
+
+        transitionManager.update(delta)
+
+        if (cambiandoPantalla) {
+            actualizarCamara()
+            return
+        }
 
         // Colisión con la rejilla (Global)
         if (debugManager.checkCollision(player)) {
@@ -886,6 +888,34 @@ class EdificioGobiernoSegundoPisoScreen(
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
+
+        // Manejar botón ABRIR
+        if (transitionManager.handleInput(touchX, touchY)) {
+            for (salon in salonesGobierno) {
+                if (tocaAccesoAbajo(salon.entrada)) {
+                    cambiandoPantalla = true
+                    transitionManager.startFade {
+                        game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
+                            game.screen = SalonGobiernoScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY
+                            )
+                        } ?: run {
+                            game.screen = SalonGobiernoScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY
+                            )
+                        }
+                    }
+                    break
+                }
+            }
             return
         }
 
@@ -1042,6 +1072,7 @@ class EdificioGobiernoSegundoPisoScreen(
         btnAbajo.dispose()
 
         debugManager.dispose()
+        transitionManager.dispose()
 
         recursosLiberados = true
     }

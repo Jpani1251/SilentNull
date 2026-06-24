@@ -15,6 +15,7 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
+import com.escom.silentnull.ui.TransitionManager
 import kotlin.math.abs
 
 class Edificio1Screen(
@@ -82,6 +83,7 @@ class Edificio1Screen(
     private val font = BitmapFont()
     private val player = Player()
     private val debugManager = DebugManager("Edificio1", worldWidth, worldHeight)
+    private val transitionManager = TransitionManager()
 
     // =========================
     // CONEXIÓN CON GOBIERNO
@@ -242,15 +244,7 @@ class Edificio1Screen(
     // =========================
     override fun render(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         update(delta)
-
-        if (cambiandoPantalla) {
-            return
-        }
 
         ScreenUtils.clear(
             0.04f,
@@ -355,6 +349,11 @@ class Edificio1Screen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // TRANSICIÓN (Encima de todo)
+        // =========================
+        transitionManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -1114,6 +1113,11 @@ class Edificio1Screen(
     // =========================
     private fun revisarAccesos(): Boolean {
 
+        // Reset estado del botón de abrir
+        transitionManager.setShowButton(false)
+
+        if (cambiandoPantalla) return false
+
         // =========================
         // IR AL EDIFICIO CENTRAL
         // =========================
@@ -1176,19 +1180,10 @@ class Edificio1Screen(
                             accesoDerecho.salon
                                 ?: return false
 
-                        cambiandoPantalla = true
+                        // En lugar de cambiar pantalla directo, mostramos botón
+                        transitionManager.setShowButton(true)
 
-                        game.screen =
-                            SalonScreen(
-                                game,
-                                salon.nombre,
-                                salon.regresoX,
-                                salon.regresoY,
-                                1,
-                                1
-                            )
-
-                        return true
+                        return false
                     }
 
                     TipoAccesoDerecho.ESCALERAS -> {
@@ -1427,15 +1422,20 @@ class Edificio1Screen(
     // =========================
     private fun update(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         player.guardarPosicionAnterior()
 
-        procesarInput(delta)
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
 
         player.update(delta)
+
+        transitionManager.update(delta)
+
+        if (cambiandoPantalla) {
+            actualizarCamara()
+            return
+        }
 
         if (
             tiempoBloqueoAccesos > 0f
@@ -1513,6 +1513,41 @@ class Edificio1Screen(
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
+
+        // Manejar botón ABRIR
+        if (transitionManager.handleInput(touchX, touchY)) {
+            val acceso = obtenerAccesoDerecho()
+            if (acceso != null && acceso.tipo == TipoAccesoDerecho.SALON) {
+                val salon = acceso.salon!!
+
+                cambiandoPantalla = true
+                transitionManager.startFade {
+                    // Al terminar el fade, reproducimos video
+                    game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
+                        // Al terminar el video (o si no hay player), entramos al salón
+                        game.screen = SalonScreen(
+                            game,
+                            salon.nombre,
+                            salon.regresoX,
+                            salon.regresoY,
+                            1,
+                            1
+                        )
+                    } ?: run {
+                        // Si no hay reproductor de video disponible
+                        game.screen = SalonScreen(
+                            game,
+                            salon.nombre,
+                            salon.regresoX,
+                            salon.regresoY,
+                            1,
+                            1
+                        )
+                    }
+                }
+            }
             return
         }
 
@@ -1719,6 +1754,7 @@ class Edificio1Screen(
         btnArriba.dispose()
         btnAbajo.dispose()
         debugManager.dispose()
+        transitionManager.dispose()
 
         recursosLiberados = true
     }

@@ -3,8 +3,11 @@ package com.escom.silentnull
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.escom.silentnull.screens.MenuScreen
+import com.escom.silentnull.video.IVideoPlayer
 
-class SilentNullGame : Game() {
+class SilentNullGame(
+    val videoPlayer: IVideoPlayer? = null
+) : Game() {
 
     // SpriteBatch:
     // sirve para dibujar TODO el juego

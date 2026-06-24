@@ -15,6 +15,7 @@ import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
+import com.escom.silentnull.ui.TransitionManager
 
 class Edificio2SegundoPisoScreen(
     private val game: SilentNullGame,
@@ -81,6 +82,7 @@ class Edificio2SegundoPisoScreen(
     private val font = BitmapFont()
     private val player = Player()
     private val debugManager = DebugManager("Edificio2_2P", worldWidth, worldHeight)
+    private val transitionManager = TransitionManager()
 
     // =========================
     // ESCALERAS
@@ -241,15 +243,7 @@ class Edificio2SegundoPisoScreen(
     // =========================
     override fun render(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         update(delta)
-
-        if (cambiandoPantalla) {
-            return
-        }
 
         ScreenUtils.clear(
             0.04f,
@@ -364,6 +358,11 @@ class Edificio2SegundoPisoScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // TRANSICIÓN
+        // =========================
+        transitionManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -984,6 +983,11 @@ class Edificio2SegundoPisoScreen(
     // =========================
     private fun revisarAccesos(): Boolean {
 
+        // Reset botón abrir
+        transitionManager.setShowButton(false)
+
+        if (cambiandoPantalla) return false
+
         // =========================
         // EDIFICIO CENTRAL P2
         // Se revisa antes que Gobierno.
@@ -1082,26 +1086,14 @@ class Edificio2SegundoPisoScreen(
         // =========================
         // SALONES
         // =========================
+        // Salones
         for (salon in entradasSalones) {
 
-            if (
-                moviendoIzquierda &&
-                player.collisionBox.overlaps(
-                    salon.entrada
-                )
-            ) {
+            if (player.collisionBox.overlaps(salon.entrada)) {
 
-                cambiandoPantalla = true
-
-                game.screen = SalonScreen(
-                    game,
-                    salon.nombre,
-                    salon.regresoX,
-                    salon.regresoY,
-                    2
-                )
-
-                return true
+                // Mostrar botón abrir
+                transitionManager.setShowButton(true)
+                return false
             }
         }
 
@@ -1274,15 +1266,20 @@ class Edificio2SegundoPisoScreen(
     // =========================
     private fun update(delta: Float) {
 
-        if (cambiandoPantalla) {
-            return
-        }
-
         player.guardarPosicionAnterior()
 
-        procesarInput(delta)
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
 
         player.update(delta)
+
+        transitionManager.update(delta)
+
+        if (cambiandoPantalla) {
+            actualizarCamara()
+            return
+        }
 
         if (tiempoBloqueoAccesos > 0f) {
 
@@ -1356,6 +1353,36 @@ class Edificio2SegundoPisoScreen(
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
+
+        // Manejar botón ABRIR
+        if (transitionManager.handleInput(touchX, touchY)) {
+            for (salon in entradasSalones) {
+                if (player.collisionBox.overlaps(salon.entrada)) {
+                    cambiandoPantalla = true
+                    transitionManager.startFade {
+                        game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
+                            game.screen = SalonScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY,
+                                2
+                            )
+                        } ?: run {
+                            game.screen = SalonScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY,
+                                2
+                            )
+                        }
+                    }
+                    break
+                }
+            }
             return
         }
 
@@ -1562,6 +1589,7 @@ class Edificio2SegundoPisoScreen(
         btnAbajo.dispose()
 
         debugManager.dispose()
+        transitionManager.dispose()
 
         recursosLiberados = true
     }
