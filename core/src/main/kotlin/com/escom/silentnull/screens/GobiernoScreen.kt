@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class GobiernoScreen(
@@ -49,6 +50,7 @@ class GobiernoScreen(
     // JUGADOR
     // =========================
     private val player = Player()
+    private val debugManager = DebugManager("Gobierno", worldWidth, worldHeight)
 
     // =========================
     // ZONAS DE CAMBIO
@@ -212,6 +214,11 @@ class GobiernoScreen(
         player.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
 
         // =========================
         // HUD
@@ -555,9 +562,18 @@ class GobiernoScreen(
 
         player.guardarPosicionAnterior()
 
+        val prevX = player.x
+        val prevY = player.y
+
         procesarInput(delta)
 
         player.update(delta)
+
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.x = prevX
+            player.y = prevY
+        }
 
         revisarCambiosDeZona()
 
@@ -580,6 +596,7 @@ class GobiernoScreen(
         moviendoAbajo = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera)
             return
         }
 
@@ -593,6 +610,11 @@ class GobiernoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
@@ -800,5 +822,7 @@ class GobiernoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
     }
 }

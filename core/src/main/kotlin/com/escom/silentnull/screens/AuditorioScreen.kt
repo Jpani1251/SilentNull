@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class AuditorioScreen(
@@ -33,6 +34,7 @@ class AuditorioScreen(
     private val font = BitmapFont()
 
     private val player = Player()
+    private val debugManager = DebugManager("Auditorio", worldWidth, worldHeight)
 
     private val salidaAuditorio = CollisionBox(
         0f,
@@ -109,6 +111,11 @@ class AuditorioScreen(
         player.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
 
         hudViewport.apply()
 
@@ -210,6 +217,11 @@ class AuditorioScreen(
 
         player.update(delta)
 
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.revertirMovimiento()
+        }
+
         val salioDelAuditorio = revisarSalida()
 
         if (salioDelAuditorio) {
@@ -233,6 +245,7 @@ class AuditorioScreen(
         moviendoIzquierda = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera)
             return
         }
 
@@ -246,6 +259,11 @@ class AuditorioScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
             moviendoIzquierda = true
@@ -394,6 +412,8 @@ class AuditorioScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
 
         recursosLiberados = true
     }

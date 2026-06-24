@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class EdificioCentralTercerPisoScreen(
@@ -51,6 +52,7 @@ class EdificioCentralTercerPisoScreen(
     private val shapeRenderer = ShapeRenderer()
     private val font = BitmapFont()
     private val player = Player()
+    private val debugManager = DebugManager("EdificioCentral3P", worldWidth, worldHeight)
 
     // =========================
     // CONEXION IZQUIERDA
@@ -219,6 +221,11 @@ class EdificioCentralTercerPisoScreen(
         player.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
 
         // =========================
         // HUD
@@ -556,6 +563,11 @@ class EdificioCentralTercerPisoScreen(
 
         player.update(delta)
 
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.revertirMovimiento()
+        }
+
         if (tiempoBloqueoAccesos > 0f) {
 
             tiempoBloqueoAccesos -= delta
@@ -587,6 +599,7 @@ class EdificioCentralTercerPisoScreen(
         moviendoAbajo = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera)
             return
         }
 
@@ -600,6 +613,11 @@ class EdificioCentralTercerPisoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
@@ -831,6 +849,8 @@ class EdificioCentralTercerPisoScreen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
 
         recursosLiberados = true
     }

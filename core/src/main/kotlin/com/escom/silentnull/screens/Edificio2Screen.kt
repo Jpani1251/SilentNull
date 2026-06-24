@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
+import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.GameButton
 
 class Edificio2Screen(
@@ -60,6 +61,7 @@ class Edificio2Screen(
     private val font = BitmapFont()
 
     private val player = Player()
+    private val debugManager = DebugManager("Edificio2", worldWidth, worldHeight)
 
     private val salidaEdificio2 = CollisionBox(
         corridorX + 220f,
@@ -290,6 +292,11 @@ class Edificio2Screen(
         player.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DEBUG TOOLS
+        // =========================
+        debugManager.render(game.batch, camera, hudCamera, player)
 
         hudViewport.apply()
 
@@ -1259,6 +1266,11 @@ class Edificio2Screen(
             revisarColisiones()
         }
 
+        // Colisión con la rejilla (Global)
+        if (debugManager.checkCollision(player)) {
+            player.revertirMovimiento()
+        }
+
         player.limitarPantalla(
             worldWidth,
             worldHeight
@@ -1278,6 +1290,7 @@ class Edificio2Screen(
         moviendoDerecha = false
 
         if (!Gdx.input.isTouched) {
+            debugManager.procesarInput(0f, 0f, camera)
             return
         }
 
@@ -1291,6 +1304,11 @@ class Edificio2Screen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Delegar al DebugManager
+        if (debugManager.procesarInput(touchX, touchY, camera)) {
+            return
+        }
 
         if (btnIzq.isTouched(touchX, touchY)) {
 
@@ -1429,6 +1447,8 @@ class Edificio2Screen(
         btnDer.dispose()
         btnArriba.dispose()
         btnAbajo.dispose()
+
+        debugManager.dispose()
 
         recursosLiberados = true
     }

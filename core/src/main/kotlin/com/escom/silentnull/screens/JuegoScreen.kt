@@ -14,6 +14,7 @@ import com.escom.silentnull.SilentNullGame
 import com.escom.silentnull.entities.Player
 import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
+import com.escom.silentnull.ui.DialogueManager
 import com.escom.silentnull.ui.GameButton
 
 class JuegoScreen(
@@ -60,6 +61,11 @@ class JuegoScreen(
     // DEBUG TOOLS
     // =========================
     private val debugManager = DebugManager("JuegoScreen", worldWidth, worldHeight)
+
+    // =========================
+    // DIÁLOGOS
+    // =========================
+    private val dialogueManager = DialogueManager()
 
     // =========================
     // ENTRADAS
@@ -222,6 +228,11 @@ class JuegoScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // =========================
+        // DIÁLOGOS (Encima de todo)
+        // =========================
+        dialogueManager.render(game.batch, hudCamera)
     }
 
     // =========================
@@ -264,6 +275,11 @@ class JuegoScreen(
 
         if (!Gdx.input.isTouched) {
             debugManager.procesarInput(0f, 0f, camera) // Reset dragging
+            return
+        }
+
+        // Si hay un diálogo, el primer toque lo cierra y bloquea el resto del input
+        if (dialogueManager.handleInput()) {
             return
         }
 
@@ -475,7 +491,10 @@ class JuegoScreen(
     // =========================
     // MÉTODOS OBLIGATORIOS
     // =========================
-    override fun show() {}
+    override fun show() {
+        // Al entrar por primera vez (o volver), si es el inicio, mostrar diálogo
+        dialogueManager.show("¿En dónde carajos estoy?")
+    }
 
     override fun resize(width: Int, height: Int) {
 
@@ -516,6 +535,7 @@ class JuegoScreen(
         btnAbajo.dispose()
 
         debugManager.dispose()
+        dialogueManager.dispose()
 
         shapeRenderer.dispose()
     }
