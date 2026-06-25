@@ -481,6 +481,8 @@ class EdificioGobiernoScreen(
 
         game.inventoryManager.update(delta)
 
+        procesarInput(delta)
+
         if (game.inventoryManager.isVisible()) {
             return
         }
@@ -490,8 +492,6 @@ class EdificioGobiernoScreen(
         }
 
         player.guardarPosicionAnterior()
-
-        procesarInput(delta)
 
         player.update(delta)
 

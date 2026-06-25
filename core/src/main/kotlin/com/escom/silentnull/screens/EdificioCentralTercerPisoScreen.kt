@@ -558,6 +558,8 @@ class EdificioCentralTercerPisoScreen(
 
         game.inventoryManager.update(delta)
 
+        procesarInput(delta)
+
         if (game.inventoryManager.isVisible()) {
             return
         }
@@ -567,8 +569,6 @@ class EdificioCentralTercerPisoScreen(
         }
 
         player.guardarPosicionAnterior()
-
-        procesarInput(delta)
 
         player.update(delta)
 

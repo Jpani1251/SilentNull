@@ -129,6 +129,9 @@ class AuditorioScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
     }
 
     private fun dibujarAuditorio() {
@@ -207,13 +210,19 @@ class AuditorioScreen(
 
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        procesarInput(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         if (cambiandoPantalla) {
             return
         }
 
         player.guardarPosicionAnterior()
-
-        procesarInput(delta)
 
         player.update(delta)
 
@@ -259,6 +268,11 @@ class AuditorioScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

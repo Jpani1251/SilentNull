@@ -29,7 +29,8 @@ class SalonScreen(
     // =========================
     // TEXTURAS
     // =========================
-    private val fondoSalon = Texture("salon_escom.png")
+    private val esLaboratorio = nombreSalon.contains(Regex("20[0-6]"))
+    private val fondoSalon = if (esLaboratorio) Texture("Labs200.png") else Texture("salon_escom.png")
 
     // =========================
     // MUNDO DEL SALON
@@ -71,12 +72,22 @@ class SalonScreen(
     // SALIDA DEL SALON
     // =========================
     // La puerta en salon_escom.png está a la derecha, arriba.
-    private val salidaSalon = CollisionBox(
-        worldWidth - 160f,
-        worldHeight * 0.65f,
-        130f,
-        180f
-    )
+    // En Labs200.png no hay puerta visible clara, pero usaremos el mismo lado derecho.
+    private val salidaSalon = if (esLaboratorio) {
+        CollisionBox(
+            worldWidth - 100f,
+            0f,
+            100f,
+            worldHeight
+        )
+    } else {
+        CollisionBox(
+            worldWidth - 160f,
+            worldHeight * 0.65f,
+            130f,
+            180f
+        )
+    }
 
     private var moviendoIzquierda = false
     private var moviendoDerecha = false
@@ -133,10 +144,17 @@ class SalonScreen(
         )
 
         // Aparece cerca de la puerta (derecha)
-        player.setPosition(
-            worldWidth - 220f,
-            worldHeight * 0.68f
-        )
+        if (esLaboratorio) {
+            player.setPosition(
+                worldWidth - 200f,
+                worldHeight / 2f
+            )
+        } else {
+            player.setPosition(
+                worldWidth - 220f,
+                worldHeight * 0.68f
+            )
+        }
 
         resize(
             Gdx.graphics.width,
@@ -205,6 +223,9 @@ class SalonScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -212,14 +233,20 @@ class SalonScreen(
     // =========================
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        procesarInput(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         if (cambiandoPantalla) {
             return
         }
 
         val prevX = player.x
         val prevY = player.y
-
-        procesarInput(delta)
 
         player.update(delta)
 
@@ -271,6 +298,11 @@ class SalonScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

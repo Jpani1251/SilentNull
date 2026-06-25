@@ -1455,15 +1455,15 @@ class Edificio1SegundoPisoScreen(
 
         game.inventoryManager.update(delta)
 
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
+
         if (game.inventoryManager.isVisible()) {
             return
         }
 
         player.guardarPosicionAnterior()
-
-        if (!cambiandoPantalla) {
-            procesarInput(delta)
-        }
 
         player.update(delta)
 

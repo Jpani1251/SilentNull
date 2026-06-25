@@ -246,6 +246,8 @@ class JuegoScreen(
 
         game.inventoryManager.update(delta)
 
+        procesarInput(delta)
+
         if (game.inventoryManager.isVisible()) {
             return
         }
@@ -254,8 +256,6 @@ class JuegoScreen(
 
         val prevX = player.x
         val prevY = player.y
-
-        procesarInput(delta)
 
         player.update(delta)
 

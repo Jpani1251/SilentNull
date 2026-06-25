@@ -472,6 +472,8 @@ class EdificioCentralSotanoScreen(
 
         game.inventoryManager.update(delta)
 
+        procesarInput(delta)
+
         if (game.inventoryManager.isVisible()) {
             return
         }
@@ -481,8 +483,6 @@ class EdificioCentralSotanoScreen(
         }
 
         player.guardarPosicionAnterior()
-
-        procesarInput(delta)
 
         player.update(delta)
 

@@ -819,16 +819,16 @@ class EdificioGobiernoSegundoPisoScreen(
 
         game.inventoryManager.update(delta)
 
+        if (!cambiandoPantalla) {
+            procesarInput(delta)
+        }
+
         if (game.inventoryManager.isVisible()) {
             return
         }
 
         val prevX = player.x
         val prevY = player.y
-
-        if (!cambiandoPantalla) {
-            procesarInput(delta)
-        }
 
         player.update(delta)
 

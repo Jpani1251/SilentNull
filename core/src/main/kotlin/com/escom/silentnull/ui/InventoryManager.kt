@@ -37,11 +37,10 @@ class InventoryManager {
 
                 if (closingFlag) {
                     inventoryVisible = false
-                    closingFlag = false
                 } else {
                     inventoryVisible = true
                 }
-
+                closingFlag = false
                 isFadingOut = true
             }
         } else if (isFadingOut) {
@@ -49,9 +48,6 @@ class InventoryManager {
             if (fadeAlpha <= 0f) {
                 fadeAlpha = 0f
                 isFadingOut = false
-                // Reset de seguridad al terminar todo el ciclo
-                isFadingIn = false
-                closingFlag = false
             }
         }
     }
@@ -60,14 +56,17 @@ class InventoryManager {
         val width = viewport.worldWidth
         val height = viewport.worldHeight
 
-        // 1. Dibujar Texturas
+        // Actualizar matrices de proyección
         batch.projectionMatrix = viewport.camera.combined
+        shapeRenderer.projectionMatrix = viewport.camera.combined
+
+        // 1. Dibujar Texturas
         batch.begin()
 
         // Botón INV en HUD
         if (!inventoryVisible && !isFadingIn && !isFadingOut) {
             btnAbrir.x = width - 200f
-            btnAbrir.y = height - 200f
+            btnAbrir.y = height - 350f
             btnAbrir.render(batch)
             font.draw(batch, "INV", btnAbrir.x + 45f, btnAbrir.y + 90f)
         }
@@ -102,11 +101,14 @@ class InventoryManager {
 
         if (!inventoryVisible) {
             if (btnAbrir.isTouched(touchX, touchY)) {
+                Gdx.app.log("InventoryManager", "Abrir inventario tocado")
                 openInventory()
                 return true
             }
         } else {
+            Gdx.app.log("InventoryManager", "Input en inventario: ($touchX, $touchY). Botón: x=${btnCerrar.x}, y=${btnCerrar.y}, w=${btnCerrar.width}, h=${btnCerrar.height}")
             if (btnCerrar.isTouched(touchX, touchY)) {
+                Gdx.app.log("InventoryManager", "Botón CERRAR tocado")
                 closeInventory()
                 return true
             }
