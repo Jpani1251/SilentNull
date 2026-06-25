@@ -196,6 +196,9 @@ class BanoScreen(
         btnAbajo.render(game.batch)
 
         game.batch.end()
+
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
     }
 
     // =========================
@@ -369,6 +372,12 @@ class BanoScreen(
     // =========================
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         if (cambiandoPantalla) {
             return
         }
@@ -427,6 +436,11 @@ class BanoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

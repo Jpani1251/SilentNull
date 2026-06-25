@@ -305,6 +305,9 @@ class Edificio2Screen(
 
         game.batch.end()
 
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
+
         // =========================
         // TRANSICIÓN
         // =========================
@@ -1228,6 +1231,12 @@ class Edificio2Screen(
 
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         if (!cambiandoPantalla) {
@@ -1299,6 +1308,11 @@ class Edificio2Screen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

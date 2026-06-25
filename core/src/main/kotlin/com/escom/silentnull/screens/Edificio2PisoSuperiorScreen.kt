@@ -332,6 +332,9 @@ class Edificio2PisoSuperiorScreen(
 
         game.batch.end()
 
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
+
         // =========================
         // TRANSICIÓN
         // =========================
@@ -1307,6 +1310,12 @@ class Edificio2PisoSuperiorScreen(
     // =========================
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         if (!cambiandoPantalla) {
@@ -1401,30 +1410,36 @@ class Edificio2PisoSuperiorScreen(
             return
         }
 
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
+
         // Manejar botón ABRIR
         if (transitionManager.handleInput(touchX, touchY)) {
-            val acceso = obtenerAccesoIzquierdo()
-            if (acceso != null && acceso.tipo == TipoAccesoIzquierdo.SALON) {
-                val salon = acceso.salon!!
-                cambiandoPantalla = true
-                transitionManager.startFade {
-                    game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
-                        game.screen = SalonScreen(
-                            game,
-                            salon.nombre,
-                            salon.regresoX,
-                            salon.regresoY,
-                            numeroPiso
-                        )
-                    } ?: run {
-                        game.screen = SalonScreen(
-                            game,
-                            salon.nombre,
-                            salon.regresoX,
-                            salon.regresoY,
-                            numeroPiso
-                        )
+            for (salon in entradasSalones) {
+                if (player.collisionBox.overlaps(salon.entrada)) {
+                    cambiandoPantalla = true
+                    transitionManager.startFade {
+                        game.videoPlayer?.playVideo("Video_anim_entrance.mp4") {
+                            game.screen = SalonScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY,
+                                numeroPiso
+                            )
+                        } ?: run {
+                            game.screen = SalonScreen(
+                                game,
+                                salon.nombre,
+                                salon.regresoX,
+                                salon.regresoY,
+                                numeroPiso
+                            )
+                        }
                     }
+                    break
                 }
             }
             return
@@ -1579,7 +1594,7 @@ class Edificio2PisoSuperiorScreen(
     }
 
     // =========================
-    // SCREEN
+    // MÉTODOS DE SCREEN
     // =========================
     override fun show() {}
 

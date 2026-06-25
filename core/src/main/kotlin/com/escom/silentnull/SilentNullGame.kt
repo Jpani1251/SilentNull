@@ -3,6 +3,7 @@ package com.escom.silentnull
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.escom.silentnull.screens.MenuScreen
+import com.escom.silentnull.ui.InventoryManager
 import com.escom.silentnull.video.IVideoPlayer
 
 class SilentNullGame(
@@ -13,6 +14,9 @@ class SilentNullGame(
     // sirve para dibujar TODO el juego
     lateinit var batch: SpriteBatch
 
+    // INVENTARIO GLOBAL
+    lateinit var inventoryManager: InventoryManager
+
     // =========================
     // INICIO DEL JUEGO
     // =========================
@@ -20,6 +24,9 @@ class SilentNullGame(
 
         // Creamos batch
         batch = SpriteBatch()
+
+        // Inicializamos Inventario
+        inventoryManager = InventoryManager()
 
         // Primera pantalla del juego
         setScreen(MenuScreen(this))
@@ -32,6 +39,7 @@ class SilentNullGame(
 
         // Liberamos memoria
         batch.dispose()
+        inventoryManager.dispose()
 
         super.dispose()
     }

@@ -350,6 +350,9 @@ class Edificio1PisoSuperiorScreen(
 
         game.batch.end()
 
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
+
         // =========================
         // TRANSICIÓN
         // =========================
@@ -1355,6 +1358,12 @@ class Edificio1PisoSuperiorScreen(
     // =========================
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         player.guardarPosicionAnterior()
 
         if (!cambiandoPantalla) {
@@ -1443,6 +1452,11 @@ class Edificio1PisoSuperiorScreen(
 
         val touchY =
             touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

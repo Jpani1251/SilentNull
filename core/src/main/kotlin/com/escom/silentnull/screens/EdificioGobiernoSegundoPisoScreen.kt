@@ -265,6 +265,9 @@ class EdificioGobiernoSegundoPisoScreen(
 
         game.batch.end()
 
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
+
         // =========================
         // TRANSICIÓN
         // =========================
@@ -814,6 +817,12 @@ class EdificioGobiernoSegundoPisoScreen(
     // =========================
     private fun update(delta: Float) {
 
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
+
         val prevX = player.x
         val prevY = player.y
 
@@ -885,6 +894,11 @@ class EdificioGobiernoSegundoPisoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {

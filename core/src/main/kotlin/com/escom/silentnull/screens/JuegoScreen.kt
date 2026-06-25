@@ -16,6 +16,7 @@ import com.escom.silentnull.physics.CollisionBox
 import com.escom.silentnull.ui.DebugManager
 import com.escom.silentnull.ui.DialogueManager
 import com.escom.silentnull.ui.GameButton
+import com.escom.silentnull.ui.InventoryManager
 
 class JuegoScreen(
     val game: SilentNullGame,
@@ -231,14 +232,23 @@ class JuegoScreen(
 
         // =========================
         // DIÁLOGOS (Encima de todo)
-        // =========================
+        // DIÁLOGOS (Encima de todo)
         dialogueManager.render(game.batch, hudCamera)
+
+        // INVENTARIO
+        game.inventoryManager.render(game.batch, hudViewport)
     }
 
     // =========================
     // UPDATE
     // =========================
     private fun update(delta: Float) {
+
+        game.inventoryManager.update(delta)
+
+        if (game.inventoryManager.isVisible()) {
+            return
+        }
 
         player.guardarPosicionAnterior()
 
@@ -293,6 +303,11 @@ class JuegoScreen(
 
         val touchX = touchPosition.x
         val touchY = touchPosition.y
+
+        // Manejar Inventario
+        if (game.inventoryManager.handleInput(touchX, touchY)) {
+            return
+        }
 
         // Delegar al DebugManager
         if (debugManager.procesarInput(touchX, touchY, camera)) {
